@@ -95,18 +95,7 @@ response_id = requests.get(url_bar)
 # Get the json content from the response
 json_id = response_id.json()
 df_id = pd.json_normalize(json_id)
-station_name_01 = str(df_id.location.values[0])
-station_temp_01 = str(four_temp_max.iloc[row].temp_max)
 
-row = 1
-station_id_02 = str(four_temp_max.iloc[row].stationId)
-station_temp_02 = str(four_temp_max.iloc[row].temp_max)
-row = 2
-station_id_03 = str(four_temp_max.iloc[row].stationId)
-station_temp_03 = str(four_temp_max.iloc[row].temp_max)
-row = 3
-station_id_04 = str(four_temp_max.iloc[row].stationId)
-station_temp_04 = str(four_temp_max.iloc[row].temp_max)
 
 # ------------------------------
 #      IMAGE MANIPULATION
@@ -121,28 +110,28 @@ title_font = ImageFont.truetype('Lato-Bold.ttf', 24)
 subtitle_font = ImageFont.truetype('Lato-Bold.ttf', 22)
 
 title_text_temp_max = "TEMPERATURA MÁXIMA"
-
-
 image_editable = ImageDraw.Draw(template)
 
 image_editable.text((10,150), title_text_temp_max, (0, 0, 0), font=title_font)
 
+station_name_01 = str(df_id.location.values[0])
+station_temp_01 = str(four_temp_max.iloc[row].temp_max)
+
 image_editable.text((10,190), station_name_01, (0, 0, 0), font=subtitle_font)
 image_editable.text((250,190), station_temp_01, (0, 0, 0), font=subtitle_font)
 
-image_editable.text((10,230), station_id_02, (0, 0, 0), font=subtitle_font)
-image_editable.text((150,230), station_temp_02, (0, 0, 0), font=subtitle_font)
+start_coord = 230
+for x in range(3):
+    station_name = str(four_temp_max.iloc[x].stationId)
+    station_temp = str(four_temp_max.iloc[x].temp_max)
 
-image_editable.text((10,270), station_id_03, (0, 0, 0), font=subtitle_font)
-image_editable.text((150,270), station_temp_03, (0, 0, 0), font=subtitle_font)
+    image_editable.text((10,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable.text((150,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
 
-image_editable.text((10,310), station_id_04, (0, 0, 0), font=subtitle_font)
-image_editable.text((150,310), station_temp_04, (0, 0, 0), font=subtitle_font)
+    start_coord += 40
+
 
 template.save("daily.png")
 
 
-
-
-
-# Made with 🤍 by Jorge Gomes MARCH 2022
+# Made with 🤍 by Jorge 🔨 Gomes MARCH 2022
