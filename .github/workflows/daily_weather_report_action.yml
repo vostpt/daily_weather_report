@@ -1,0 +1,39 @@
+name: DAILY WEATHER REPORT ACTION
+
+on:
+  schedule:
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: checkout repo content
+        uses: actions/checkout@v2
+        with:
+        ref: ${{github.head_ref}}
+
+      # Setting up python environment
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      - name: Install python packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run App
+        # What is the script that will run
+        run: python app.py
+
+      - name: Commit changes
+        # Commit message
+        uses: stefanzwifel/git-auto-commit-action@v4.1.1
+        with:
+          commit_message: DAILY WEATHER REPORT
+          branch: ${{ github.head_ref}}
+
+      
