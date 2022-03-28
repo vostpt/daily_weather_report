@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-# author: Jorge Gomes for VOST Portugal
+# Original Code: Jorge Gomes 
+# Optimization: João Pina 
 
 # ------------------------------
 #       DESCRIPTION
@@ -32,7 +33,8 @@ url = 'https://www.ipma.pt/pt/otempo/obs.superficie/table-top-stations-all.jsp'
 page = requests.get(url)
 
 
-# Based on this soluton https://gist.github.com/falsovsky/aa5423db4c71ff3dbfeeff48b9102ed5 
+# Based on this soluton 
+# https://gist.github.com/falsovsky/aa5423db4c71ff3dbfeeff48b9102ed5 
 
 # Use Regex to extract json
 
@@ -75,32 +77,16 @@ four_temp_min_all  = ipma_data_yesterday.sort_values(by=['temp_min'],ascending=T
 four_temp_min = four_temp_min_all[four_temp_min_all.temp_min != -99.0].head(4)
 
 # Max Wind Gust 
+# Create Dataframe based on yesterday's data, sorting maximum wind gust
 four_wind_max = ipma_data_yesterday.sort_values(by=['vento_int_max_inst'],ascending=False).head(4)
 
 
 # Max rain accumulated
+# Create Dataframe based on yesterday's data, sorting maximum accumulated rain
 four_rain_accu = ipma_data_yesterday.sort_values(by=['prec_quant'],ascending=False).head(4)
 
-# ------------------------------
-#     DAILY VARIABLES
-# ------------------------------
 
-# FIRST VALUE 
-row = 0 
-station_01 = four_temp_max.iloc[row].stationId
-url_bar = f"https://api.fogos.pt/v2/weather/stations" \
-f"?id={station_01}" 
-# Get response from URL 
-response_id = requests.get(url_bar)
-# Get the json content from the response
-json_id = response_id.json()
-df_id = pd.json_normalize(json_id)
-
-
-# ------------------------------
-#      IMAGE MANIPULATION
-# ------------------------------
-
+# Define function to fetch stationId's name 
 def getStationNameById(id):
     url_bar = f"https://api.fogos.pt/v2/weather/stations" \
     f"?id={id}" 
@@ -108,41 +94,84 @@ def getStationNameById(id):
     response_id = requests.get(url_bar)
     # Get the json content from the response
     json_id = response_id.json()
+    # Create Datafframe from json file
     df_id = pd.json_normalize(json_id)
     return df_id
 
-
+# ------------------------------
+#       IMAGE MANIPULATION 
+# ------------------------------
 # Load Base Image
-template = Image.open("template.png")
+template = Image.open("resumo_meteo_template.png")
 
-# Define Title Font
+# Define Font and Size
+# Font file needs to be in the same folder
 title_font = ImageFont.truetype('Lato-Bold.ttf', 24)
 subtitle_font = ImageFont.truetype('Lato-Bold.ttf', 22)
 
-title_text_temp_max = "TEMPERATURA MÁXIMA"
+# Create a copy of the image that can be edited
 image_editable = ImageDraw.Draw(template)
 
-image_editable.text((10,150), title_text_temp_max, (0, 0, 0), font=title_font)
 
-station_name_01 = str(df_id.location.values[0])
-station_temp_01 = str(four_temp_max.iloc[row].temp_max)
+# Define starting Y Coordinates 
+start_coord = 300
 
-image_editable.text((10,190), station_name_01, (0, 0, 0), font=subtitle_font)
-image_editable.text((250,190), station_temp_01, (0, 0, 0), font=subtitle_font)
-
-start_coord = 230
-for x in range(3):
+# Create Loop For Max Temperature 
+for x in range(4):
     name = getStationNameById(four_temp_max.iloc[x].stationId)
     station_name = name.location.values[0]
     station_temp = str(four_temp_max.iloc[x].temp_max)
+    image_editable.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
 
-    image_editable.text((10,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable.text((150,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    # Increase y coordinates by 24px 
+    start_coord += 24
+   
 
-    start_coord += 40
+# Define starting Y Coordinates 
+start_coord = 560
+
+# Create Loop For Min Temperature 
+for x in range(4):
+    name = getStationNameById(four_temp_min.iloc[x].stationId)
+    station_name = name.location.values[0]
+    station_temp = str(four_temp_min.iloc[x].temp_min)
+    image_editable.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
+    start_coord += 24
+
+# Define starting Y Coordinates 
+start_coord = 560
+
+# Create Loop For Max Wind Gusts
+for x in range(4):
+    name = getStationNameById(four_wind_max.iloc[x].stationId)
+    station_name = name.location.values[0]
+    station_temp = str(four_wind_max.iloc[x].vento_int_max_inst)
+    image_editable.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
+    start_coord += 24
+
+# Define starting Y Coordinates 
+start_coord = 300
+
+# Create Loop For Max Rain Accumulation
+for x in range(4):
+    name = getStationNameById(four_rain_accu.iloc[x].stationId)
+    station_name = name.location.values[0]
+    station_temp = str(four_wind_max.iloc[x].prec_quant)
+    image_editable.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
+    start_coord += 24
+
+# Save Resulting Picture 
+template.save("daily_meteo_report.png")
 
 
-template.save("daily.png")
-
-
-# Made with 🤍 by Jorge 🔨 Gomes MARCH 2022
+# Made with 🤍 by Jorge Gomes & João Pina  MARCH 2022
