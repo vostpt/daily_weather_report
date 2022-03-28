@@ -101,8 +101,18 @@ df_id = pd.json_normalize(json_id)
 #      IMAGE MANIPULATION
 # ------------------------------
 
-# Load Base Image
+def getStationNameById(id):
+    url_bar = f"https://api.fogos.pt/v2/weather/stations" \
+    f"?id={id}" 
+    # Get response from URL 
+    response_id = requests.get(url_bar)
+    # Get the json content from the response
+    json_id = response_id.json()
+    df_id = pd.json_normalize(json_id)
+    return df_id
 
+
+# Load Base Image
 template = Image.open("template.png")
 
 # Define Title Font
@@ -122,7 +132,8 @@ image_editable.text((250,190), station_temp_01, (0, 0, 0), font=subtitle_font)
 
 start_coord = 230
 for x in range(3):
-    station_name = str(four_temp_max.iloc[x].stationId)
+    name = getStationNameById(four_temp_max.iloc[x].stationId)
+    station_name = name.location.values[0]
     station_temp = str(four_temp_max.iloc[x].temp_max)
 
     image_editable.text((10,start_coord), station_name, (0, 0, 0), font=subtitle_font)
