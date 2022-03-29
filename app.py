@@ -21,9 +21,9 @@ from datetime import datetime, timedelta
 from PIL import Image, ImageFont, ImageDraw 
 
 
-# ------------------------------
-#            GET DATA
-# ------------------------------
+# ---------------------------------------
+#    GET DATA AND GENERATE DATAFRAMES
+# ----------------------------------------
 
 # Define URL 
 
@@ -62,29 +62,6 @@ yesterday_date = datetime.strftime(yesterday, '%Y-%m-%d')
 
 ipma_data_yesterday = ipma_data[ipma_data['date'] == yesterday_date]
 
-# Max Temperatures 
-# Create Dataframe based on yesterday's data, sorting maximum temperature and extracting top 4 values
-
-four_temp_max  = ipma_data_yesterday.sort_values(by=['temp_max'],ascending=False).head(4)
-
-# Min Temperatures
-# Create Dataframe based on yesterday's data, sorting minimum temperature
-
-four_temp_min_all  = ipma_data_yesterday.sort_values(by=['temp_min'],ascending=True)
-
-# Drop all -99.0 values, since those are IPMA's way of saying station is fucked up. (Yes!Really!)
-# and keep top four results
-four_temp_min = four_temp_min_all[four_temp_min_all.temp_min != -99.0].head(4)
-
-# Max Wind Gust 
-# Create Dataframe based on yesterday's data, sorting maximum wind gust
-four_wind_max = ipma_data_yesterday.sort_values(by=['vento_int_max_inst'],ascending=False).head(4)
-
-
-# Max rain accumulated
-# Create Dataframe based on yesterday's data, sorting maximum accumulated rain
-four_rain_accu = ipma_data_yesterday.sort_values(by=['prec_quant'],ascending=False).head(4)
-
 
 # Define function to fetch stationId's name 
 def getStationNameById(id):
@@ -98,31 +75,108 @@ def getStationNameById(id):
     df_id = pd.json_normalize(json_id)
     return df_id
 
+
+# Create empty list for territory
+territory = []
+
+# Get max records on dataframe
+max_records = len(ipma_data_yesterday)
+
+# Get territory for each station on the Dataframe 
+
+for x in range(max_records):
+  info = getStationNameById(ipma_data_yesterday.iloc[x].stationId)
+  region = info.place.values[0]
+  territory.append(region)
+
+# Create new column called "territory" using the list generated above 
+
+ipma_data_yesterday.loc[:,'territory'] = pd.Series(territory).values
+
+# Create dataframe for Madeira's values from yesterday 
+df_madeira_yesterday = ipma_data_yesterday[ipma_data_yesterday.territory == "Madeira"]
+
+# Create dataframe for Azores's values from yesterday 
+df_azores_yesterday = ipma_data_yesterday[ipma_data_yesterday.territory == "Açores"]
+
+# Create dataframe for Portugal's values from yesterday 
+df_portugal_yesterday = ipma_data_yesterday[ipma_data_yesterday.territory == "Portugal"]
+
+# -----------------------------------
+#       DEFINE MAX TEMP, 
+# MIN TEMP, MAX GUST, AND RAIN ACCU
+#       FOR ALL TERRITORIES
+# -----------------------------------
+
+# Max Temperatures 
+# Create Dataframe based on yesterday's data, sorting maximum temperature and extracting top 4 values
+
+four_temp_max_mad = df_madeira_yesterday.sort_values(by=['temp_max'],ascending=False).head(4)
+four_temp_max_az = df_azores_yesterday.sort_values(by=['temp_max'],ascending=False).head(4)
+four_temp_max_pt = df_portugal_yesterday.sort_values(by=['temp_max'],ascending=False).head(4)
+
+# Min Temperatures
+# Create Dataframes based on yesterday's data, sorting by minimum temperature
+
+four_temp_min_mad  = df_madeira_yesterday.sort_values(by=['temp_min'],ascending=True)
+four_temp_min_az = df_azores_yesterday.sort_values(by=['temp_min'],ascending=True)
+four_temp_min_pt = df_portugal_yesterday.sort_values(by=['temp_min'],ascending=True)
+# Drop all -99.0 values, since those are IPMA's way of saying station is fucked up or not working or somehting
+# (Yes!Really!)
+# and keep top four results
+four_temp_min_mad = four_temp_min_mad[four_temp_min_mad.temp_min != -99.0].head(4)
+four_temp_min_az = four_temp_min_az[four_temp_min_az.temp_min != -99.0].head(4)
+four_temp_min_pt = four_temp_min_pt[four_temp_min_pt.temp_min != -99.0].head(4)
+
+# Max Wind Gust 
+# Create Dataframes based on yesterday's data, sorting by maximum wind gust
+four_wind_max_mad = df_madeira_yesterday.sort_values(by=['vento_int_max_inst'],ascending=False).head(4)
+four_wind_max_az = df_azores_yesterday.sort_values(by=['vento_int_max_inst'],ascending=False).head(4)
+four_wind_max_pt = df_portugal_yesterday.sort_values(by=['vento_int_max_inst'],ascending=False).head(4)
+
+# Max rain accumulated
+# Create Dataframes based on yesterday's data, sorting by maximum accumulated rain
+four_rain_accu_mad = df_madeira_yesterday.sort_values(by=['prec_quant'],ascending=False).head(4)
+four_rain_accu_az = df_azores_yesterday.sort_values(by=['prec_quant'],ascending=False).head(4)
+four_rain_accu_pt = df_portugal_yesterday.sort_values(by=['prec_quant'],ascending=False).head(4)
+
+
+
+
 # ------------------------------
 #       IMAGE MANIPULATION 
 # ------------------------------
-# Load Base Image
-template = Image.open("resumo_meteo_template.png")
+
+
+# Load Base Images
+template_pt = Image.open("resumo_meteo_template_pt.png")
+template_az = Image.open("resumo_meteo_template_az.png")
+template_mad = Image.open("resumo_meteo_template_mad.png")
 
 # Define Font and Size
 # Font file needs to be in the same folder
 title_font = ImageFont.truetype('Lato-Bold.ttf', 24)
 subtitle_font = ImageFont.truetype('Lato-Bold.ttf', 22)
 
-# Create a copy of the image that can be edited
-image_editable = ImageDraw.Draw(template)
+# Create copies of the images that can be edited
+image_editable_pt = ImageDraw.Draw(template_pt)
+image_editable_az = ImageDraw.Draw(template_az)
+image_editable_mad = ImageDraw.Draw(template_mad)
 
+# ------------------------------
+#     PORTUGAL CONTINENTAL
+# ------------------------------
 
 # Define starting Y Coordinates 
 start_coord = 300
 
 # Create Loop For Max Temperature 
 for x in range(4):
-    name = getStationNameById(four_temp_max.iloc[x].stationId)
+    name = getStationNameById(four_temp_max_pt.iloc[x].stationId)
     station_name = name.location.values[0]
-    station_temp = str(four_temp_max.iloc[x].temp_max)
-    image_editable.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    station_temp = str(four_temp_max_pt.iloc[x].temp_max)
+    image_editable_pt.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -133,11 +187,11 @@ start_coord = 560
 
 # Create Loop For Min Temperature 
 for x in range(4):
-    name = getStationNameById(four_temp_min.iloc[x].stationId)
+    name = getStationNameById(four_temp_min_pt.iloc[x].stationId)
     station_name = name.location.values[0]
-    station_temp = str(four_temp_min.iloc[x].temp_min)
-    image_editable.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    station_temp = str(four_temp_min_pt.iloc[x].temp_min)
+    image_editable_pt.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -147,11 +201,11 @@ start_coord = 560
 
 # Create Loop For Max Wind Gusts
 for x in range(4):
-    name = getStationNameById(four_wind_max.iloc[x].stationId)
+    name = getStationNameById(four_wind_max_pt.iloc[x].stationId)
     station_name = name.location.values[0]
-    station_temp = str(four_wind_max.iloc[x].vento_int_max_inst)
-    image_editable.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    station_temp = str(four_wind_max_pt.iloc[x].vento_int_max_inst)
+    image_editable_pt.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -161,17 +215,155 @@ start_coord = 300
 
 # Create Loop For Max Rain Accumulation
 for x in range(4):
-    name = getStationNameById(four_rain_accu.iloc[x].stationId)
+    name = getStationNameById(four_rain_accu_pt.iloc[x].stationId)
     station_name = name.location.values[0]
-    station_temp = str(four_wind_max.iloc[x].prec_quant)
-    image_editable.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    station_temp = str(four_rain_accu_pt.iloc[x].prec_quant)
+    image_editable_pt.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
 
-# Save Resulting Picture 
-template.save("daily_meteo_report.png")
+# ------------------------------
+#     AZORES
+# ------------------------------
+
+# Define starting Y Coordinates 
+start_coord = 300
+
+# Create Loop For Max Temperature 
+for x in range(4):
+    name = getStationNameById(four_temp_max_az.iloc[x].stationId)
+    station_name = name.location.values[0]
+    station_temp = str(four_temp_max_az.iloc[x].temp_max)
+    image_editable_az.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
+    start_coord += 24
+   
+
+# Define starting Y Coordinates 
+start_coord = 560
+
+# Create Loop For Min Temperature 
+for x in range(4):
+    name = getStationNameById(four_temp_min_az.iloc[x].stationId)
+    station_name = name.location.values[0]
+    station_temp = str(four_temp_min_az.iloc[x].temp_min)
+    image_editable_az.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
+    start_coord += 24
+
+# Define starting Y Coordinates 
+start_coord = 560
+
+# Create Loop For Max Wind Gusts
+for x in range(4):
+    name = getStationNameById(four_wind_max_az.iloc[x].stationId)
+    station_name = name.location.values[0]
+    station_temp = str(four_wind_max_az.iloc[x].vento_int_max_inst)
+    image_editable_az.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
+    start_coord += 24
+
+# Define starting Y Coordinates 
+start_coord = 300
+
+# Create Loop For Max Rain Accumulation
+for x in range(4):
+    name = getStationNameById(four_rain_accu_az.iloc[x].stationId)
+    station_name = name.location.values[0]
+    station_temp = str(four_rain_accu_az.iloc[x].prec_quant)
+    image_editable_az.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
+    start_coord += 24
+
+
+#---------------------------------
+#          MADEIRA
+#---------------------------------
+
+# Define starting Y Coordinates 
+start_coord = 300
+
+# Create Loop For Max Temperature 
+for x in range(4):
+    name = getStationNameById(four_temp_max_mad.iloc[x].stationId)
+    station_name = name.location.values[0]
+    station_temp = str(four_temp_max_mad.iloc[x].temp_max)
+    image_editable_mad.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
+    start_coord += 24
+   
+
+# Define starting Y Coordinates 
+start_coord = 560
+
+# Create Loop For Min Temperature 
+for x in range(4):
+    name = getStationNameById(four_temp_min_mad.iloc[x].stationId)
+    station_name = name.location.values[0]
+    station_temp = str(four_temp_min_mad.iloc[x].temp_min)
+    image_editable_mad.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
+    start_coord += 24
+
+# Define starting Y Coordinates 
+start_coord = 560
+
+# Create Loop For Max Wind Gusts
+for x in range(4):
+    name = getStationNameById(four_wind_max_mad.iloc[x].stationId)
+    station_name = name.location.values[0]
+    station_temp = str(four_wind_max_mad.iloc[x].vento_int_max_inst)
+    image_editable_mad.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
+    start_coord += 24
+
+# Define starting Y Coordinates 
+start_coord = 300
+
+# Create Loop For Max Rain Accumulation
+for x in range(4):
+    name = getStationNameById(four_rain_accu_mad.iloc[x].stationId)
+    station_name = name.location.values[0]
+    station_temp = str(four_rain_accu_mad.iloc[x].prec_quant)
+    image_editable_mad.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
+    start_coord += 24
+
+
+#---------------------------------
+#         SAVE PICTURES
+#---------------------------------
+
+# Save Resulting Pictures
+template_pt.save("daily_meteo_report_pt.png")
+template_az.save("daily_meteo_report_az.png")
+template_mad.save("daily_meteo_report_mad.png")
+
+#---------------------------------
+#         THE END
+#---------------------------------
 
 
 # Made with 🤍 by Jorge Gomes & João Pina  MARCH 2022
+
+
+
+#............................................ PAGE BREAK ......................
