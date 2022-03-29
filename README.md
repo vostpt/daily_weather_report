@@ -3,9 +3,9 @@
 
 ## WORKFLOW
 
-1. Get Madeira - df_madeira
-2. Get Açores - df_azores
-3. Get Continente - df_continente
+1. Get Madeira - df_madeira - via API call
+2. Get Açores - df_azores - via API call 
+3. Get Continente - df_continente - via API call 
 
 Sort by date 
 1. df_madeira
