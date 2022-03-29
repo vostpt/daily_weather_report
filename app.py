@@ -57,6 +57,7 @@ ipma_data = ipma_data.sort_values(by=['date'])
 
 yesterday = datetime.now() - timedelta(1)
 yesterday_date = datetime.strftime(yesterday, '%Y-%m-%d')
+report_date = str(yesterday_date)
 
 # Create new datafraeme with only yesterday's results
 
@@ -157,11 +158,38 @@ template_mad = Image.open("resumo_meteo_template_mad.png")
 # Font file needs to be in the same folder
 title_font = ImageFont.truetype('Lato-Bold.ttf', 24)
 subtitle_font = ImageFont.truetype('Lato-Bold.ttf', 22)
+date_font = ImageFont.truetype('Lato-Bold.ttf', 72)
 
 # Create copies of the images that can be edited
 image_editable_pt = ImageDraw.Draw(template_pt)
 image_editable_az = ImageDraw.Draw(template_az)
 image_editable_mad = ImageDraw.Draw(template_mad)
+
+# Create Units strings 
+temp_unit = "º C"
+rain_unit = " mm"
+wind_unit = " km/h"
+
+# Create vars for coordinates
+
+max_temp_station_y = 40
+max_temp_y = 373.7607
+max_temp_unit_y = 416
+
+min_temp_station_y = 40
+min_temp_y = 385.9927
+min_temp_unit_y = 416
+
+max_wind_station_y = 600
+max_wind_y = 950
+max_wind_unit_y = 1000.0576
+
+max_rain_station_y = 600
+max_rain_y = 950
+max_rain_unit_y = 1000.0576
+
+
+
 
 # ------------------------------
 #     PORTUGAL CONTINENTAL
@@ -174,9 +202,12 @@ start_coord = 300
 for x in range(4):
     name = getStationNameById(four_temp_max_pt.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("(CIM)", "").strip()
     station_temp = str(four_temp_max_pt.iloc[x].temp_max)
-    image_editable_pt.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_pt.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((max_temp_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((max_temp_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((max_temp_unit_y,start_coord), temp_unit, (0, 0, 0), font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -189,9 +220,12 @@ start_coord = 560
 for x in range(4):
     name = getStationNameById(four_temp_min_pt.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("(CIM)", "").strip()
     station_temp = str(four_temp_min_pt.iloc[x].temp_min)
-    image_editable_pt.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_pt.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((min_temp_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((min_temp_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((min_temp_unit_y,start_coord), temp_unit, (0, 0, 0), font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -203,9 +237,12 @@ start_coord = 560
 for x in range(4):
     name = getStationNameById(four_wind_max_pt.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("(CIM)", "").strip()
     station_temp = str(four_wind_max_pt.iloc[x].vento_int_max_inst)
-    image_editable_pt.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_pt.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((max_wind_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((max_wind_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((max_wind_unit_y,start_coord), wind_unit, (0,0,0),font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -217,9 +254,12 @@ start_coord = 300
 for x in range(4):
     name = getStationNameById(four_rain_accu_pt.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("(CIM)", "").strip()
     station_temp = str(four_rain_accu_pt.iloc[x].prec_quant)
-    image_editable_pt.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_pt.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((max_rain_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((max_rain_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_pt.text((max_rain_unit_y,start_coord), rain_unit, (0,0,0),font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -235,9 +275,12 @@ start_coord = 300
 for x in range(4):
     name = getStationNameById(four_temp_max_az.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("(DROTRH)", "").strip()
     station_temp = str(four_temp_max_az.iloc[x].temp_max)
-    image_editable_az.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_az.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((max_temp_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((max_temp_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((max_temp_unit_y,start_coord), temp_unit, (0, 0, 0), font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -250,9 +293,12 @@ start_coord = 560
 for x in range(4):
     name = getStationNameById(four_temp_min_az.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("(DROTRH)", "").strip()
     station_temp = str(four_temp_min_az.iloc[x].temp_min)
-    image_editable_az.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_az.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((min_temp_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((min_temp_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((min_temp_unit_y,start_coord), temp_unit, (0, 0, 0), font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -264,9 +310,12 @@ start_coord = 560
 for x in range(4):
     name = getStationNameById(four_wind_max_az.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("(DROTRH)", "").strip()
     station_temp = str(four_wind_max_az.iloc[x].vento_int_max_inst)
-    image_editable_az.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_az.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((max_wind_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((max_wind_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((max_wind_unit_y,start_coord), wind_unit, (0,0,0),font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -278,9 +327,12 @@ start_coord = 300
 for x in range(4):
     name = getStationNameById(four_rain_accu_az.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("(DROTRH)", "").strip()
     station_temp = str(four_rain_accu_az.iloc[x].prec_quant)
-    image_editable_az.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_az.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((max_rain_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((max_rain_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_az.text((max_rain_unit_y,start_coord), rain_unit, (0,0,0),font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -297,9 +349,14 @@ start_coord = 300
 for x in range(4):
     name = getStationNameById(four_temp_max_mad.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("Madeira,", "").strip()
     station_temp = str(four_temp_max_mad.iloc[x].temp_max)
-    image_editable_mad.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_mad.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((max_temp_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((max_temp_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((max_temp_unit_y,start_coord), temp_unit, (0, 0, 0), font=subtitle_font)
+
+    # Increase y coordinates by 24px 
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -312,9 +369,13 @@ start_coord = 560
 for x in range(4):
     name = getStationNameById(four_temp_min_mad.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("Madeira,", "").strip()
     station_temp = str(four_temp_min_mad.iloc[x].temp_min)
-    image_editable_mad.text((40,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_mad.text((450,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((min_temp_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((min_temp_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((min_temp_unit_y,start_coord), temp_unit, (0, 0, 0), font=subtitle_font)
+
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -326,9 +387,12 @@ start_coord = 560
 for x in range(4):
     name = getStationNameById(four_wind_max_mad.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("Madeira,", "").strip()
     station_temp = str(four_wind_max_mad.iloc[x].vento_int_max_inst)
-    image_editable_mad.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_mad.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((max_wind_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((max_wind_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((max_wind_unit_y,start_coord), wind_unit, (0,0,0),font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
@@ -340,12 +404,24 @@ start_coord = 300
 for x in range(4):
     name = getStationNameById(four_rain_accu_mad.iloc[x].stationId)
     station_name = name.location.values[0]
+    # Strip station names 
+    station_name_final = station_name.replace("Madeira,", "").strip()
     station_temp = str(four_rain_accu_mad.iloc[x].prec_quant)
-    image_editable_mad.text((600,start_coord), station_name, (0, 0, 0), font=subtitle_font)
-    image_editable_mad.text((950,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((max_rain_station_y,start_coord), station_name_final, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((max_rain_y,start_coord), station_temp, (0, 0, 0), font=subtitle_font)
+    image_editable_mad.text((max_rain_unit_y,start_coord), rain_unit, (0,0,0),font=subtitle_font)
 
     # Increase y coordinates by 24px 
     start_coord += 24
+
+
+#---------------------------------
+#      INSERT DATE AND UNITS
+#---------------------------------
+
+image_editable_pt.text((348.8804,739.9473), report_date, (193, 193, 193), font=date_font)
+image_editable_az.text((348.8804,739.9473), report_date, (193, 193, 193), font=date_font)
+image_editable_mad.text((348.8804,739.9473), report_date, (193, 193, 193), font=date_font)
 
 
 #---------------------------------
