@@ -1,0 +1,44 @@
+name: DAILY WEATHER REPORT ACTION
+
+# Controls when the workflow will run / Helpful website: https://crontab.guru/
+on:
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron: '0 10 * * *'
+  # Run the workflow manually for debugging or forced executions
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: checkout repo content
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+
+      # Runs a single command using the runners shell
+      - name: Install python packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Run App 
+        run: python app.py
+
+      # Commit New Data 
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v4.1.1
+        with:
+          commit_message: DAILY WEATHER REPORT SCRAPPING SUCCESSFUL 
+          branch: ${{ github.head_ref }}
