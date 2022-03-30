@@ -188,7 +188,14 @@ max_rain_station_y = 600
 max_rain_y = 950
 max_rain_unit_y = 1000.0576
 
+# Create Colors Lists
 
+colors_temp_max = []
+colors_temp_min = []
+colors_hum_max = []
+colors_hum_min = []
+colors_wind_max = []
+colors_rain_accu =[(112,112,164),(138,147,189),(163,175,213),(185,194,226)
 
 
 # ------------------------------
