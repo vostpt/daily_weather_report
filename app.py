@@ -188,14 +188,20 @@ max_rain_station_y = 600
 max_rain_y = 950
 max_rain_unit_y = 1000.0576
 
-# Create Colors Lists
+# Create Colors Lists 
+# Closes #8 when lists finished. Remove this comment afterwards
 
-colors_temp_max = []
-colors_temp_min = []
-colors_hum_max = []
-colors_hum_min = []
-colors_wind_max = []
-colors_rain_accu =[(112,112,164),(138,147,189),(163,175,213),(185,194,226)
+colors_temp_max = [(154,7,7),(234,9,9),(240,157,57),(239,129,129)]
+
+colors_temp_min = [(89,165,222),(89,165,222),(107,176,226),(141,195,233)]
+
+colors_humi_max = [(89,165,222),(89,165,222),(107,176,226),(141,195,233)]
+
+colors_humi_min = [(154,7,7),(234,9,9),(240,157,57),(239,129,129)]
+
+colors_wind_max = [(89,133,187),(122,160,210),(147,179,224),(189,208,234)]
+
+colors_rain_max = [(112,121,164),(138,147,189),(163,175,213),(185,194,226)]
 
 
 # ------------------------------
