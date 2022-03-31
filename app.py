@@ -152,9 +152,9 @@ four_hum_min_az = four_hum_min_az[four_hum_min_az.hum_min != -99.0].head(4)
 four_hum_min_pt = four_hum_min_pt[four_hum_min_pt.hum_min != -99.0].head(4)
 
 # Humidity Max
-four_hum_max_mad  = df_madeira_yesterday.sort_values(by=['hum_max'],ascending=True)
-four_hum_max_az = df_azores_yesterday.sort_values(by=['hum_max'],ascending=True)
-four_hum_max_pt = df_portugal_yesterday.sort_values(by=['hum_max'],ascending=True)
+four_hum_max_mad  = df_madeira_yesterday.sort_values(by=['hum_max'],ascending=False)
+four_hum_max_az = df_azores_yesterday.sort_values(by=['hum_max'],ascending=False)
+four_hum_max_pt = df_portugal_yesterday.sort_values(by=['hum_max'],ascending=False)
 
 four_hum_max_mad = four_hum_max_mad[four_hum_max_mad.hum_max != -99.0].head(4)
 four_hum_max_az = four_hum_max_az[four_hum_max_az.hum_max != -99.0].head(4)
@@ -196,10 +196,10 @@ df_amplitude_mad = df_amplitude_mad.sort_values(by=['amplitude'],ascending=False
 
 # Create Colors Lists 
 
-colors_temp_max = [(154,7,7),(144,37,37),(134,67,67),(124,97,97)]
+colors_temp_max = [(143,32,23),(155,53,48),(179,103,101),(205,156,155)]
 colors_temp_min = [(89,165,222),(89,165,222),(107,176,226),(141,195,233)]
 colors_hum_max = [(89,165,222),(89,165,222),(107,176,226),(141,195,233)]
-colors_hum_min = [(154,7,7),(234,9,9),(240,157,57),(239,129,129)]
+colors_hum_min = [(143,32,23),(155,53,48),(179,103,101),(205,156,155)]
 colors_wind_max = [(89,133,187),(122,160,210),(147,179,224),(189,208,234)]
 colors_rain_max = [(112,121,164),(138,147,189),(163,175,213),(185,194,226)]
 
