@@ -123,7 +123,7 @@ four_temp_max_pt = df_portugal_yesterday.sort_values(by=['temp_max'],ascending=F
 four_temp_min_mad  = df_madeira_yesterday.sort_values(by=['temp_min'],ascending=True)
 four_temp_min_az = df_azores_yesterday.sort_values(by=['temp_min'],ascending=True)
 four_temp_min_pt = df_portugal_yesterday.sort_values(by=['temp_min'],ascending=True)
-# Drop all -99.0 values, since those are IPMA's way of saying station is fucked up or not working or somehting
+# Drop all -99.0 values, since those are IPMA's way of saying station is fucked up or not working or something
 # (Yes!Really!)
 # and keep top four results
 four_temp_min_mad = four_temp_min_mad[four_temp_min_mad.temp_min != -99.0].head(4)
