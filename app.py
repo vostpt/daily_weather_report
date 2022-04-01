@@ -206,40 +206,30 @@ colors_rain_max = [(112,121,164),(138,147,189),(163,175,213),(185,194,226)]
 
 # Max Temperature Colors
 
-four_temp_max_mad.loc[:,'colors'] = pd.Series(colors_temp_max).values
-four_temp_max_az.loc[:,'colors'] = pd.Series(colors_temp_max).values
-four_temp_max_pt.loc[:,'colors'] = pd.Series(colors_temp_max).values
+four_temp_max_mad.loc[:,'colors'] = four_temp_max_az.loc[:,'colors'] = four_temp_max_pt.loc[:,'colors'] = pd.Series(colors_temp_max).values
 
 # Min Temperature Colors
 
-four_temp_min_mad.loc[:,'colors'] = pd.Series(colors_temp_min).values
-four_temp_min_az.loc[:,'colors'] = pd.Series(colors_temp_min).values
-four_temp_min_pt.loc[:,'colors'] = pd.Series(colors_temp_min).values
+four_temp_min_mad.loc[:,'colors'] = four_temp_min_az.loc[:,'colors'] = four_temp_min_pt.loc[:,'colors'] = pd.Series(colors_temp_min).values
 
 
 # Max Rainfall 
 
-four_rain_accu_mad.loc[:,'colors'] = pd.Series(colors_rain_max).values
-four_rain_accu_az.loc[:,'colors'] = pd.Series(colors_rain_max).values
-four_rain_accu_pt.loc[:,'colors'] = pd.Series(colors_rain_max).values
+four_rain_accu_mad.loc[:,'colors'] = four_rain_accu_az.loc[:,'colors'] = four_rain_accu_pt.loc[:,'colors'] = pd.Series(colors_rain_max).values
 
 
 # Max Wind Gust 
 
-four_wind_max_mad.loc[:,'colors'] = pd.Series(colors_wind_max).values
-four_wind_max_az.loc[:,'colors'] = pd.Series(colors_wind_max).values
-four_wind_max_pt.loc[:,'colors'] = pd.Series(colors_wind_max).values
+four_wind_max_mad.loc[:,'colors'] = four_wind_max_az.loc[:,'colors'] = four_wind_max_pt.loc[:,'colors'] = pd.Series(colors_wind_max).values
 
 # Mazimum Humidity
 
-four_hum_max_mad.loc[:,'colors'] = pd.Series(colors_hum_max).values
-four_hum_max_az.loc[:,'colors'] = pd.Series(colors_hum_max).values
-four_hum_max_pt.loc[:,'colors'] = pd.Series(colors_hum_max).values
+four_hum_max_mad.loc[:,'colors'] = four_hum_max_az.loc[:,'colors'] = four_hum_max_pt.loc[:,'colors'] = pd.Series(colors_hum_max).values
+
 
 # Min Humidity
-four_hum_min_mad.loc[:,'colors'] = pd.Series(colors_hum_min).values
-four_hum_min_az.loc[:,'colors'] = pd.Series(colors_hum_min).values
-four_hum_min_pt.loc[:,'colors'] = pd.Series(colors_hum_min).values
+four_hum_min_mad.loc[:,'colors'] = four_hum_min_az.loc[:,'colors'] = four_hum_min_pt.loc[:,'colors'] = pd.Series(colors_hum_min).values
+
 
 
 # ------------------------------
@@ -266,40 +256,6 @@ image_editable_az = ImageDraw.Draw(template_az)
 image_editable_mad = ImageDraw.Draw(template_mad)
 
 
-# Create vars for coordinates
-
-# Right Column 
-
-max_temp_start_coords = 190 # This value increments by 30px every loop iteration
-max_temp_station_name_x = 115  # Where Station Name Appears 
-max_temp_value_x = 460  # Where Value Appears 
-
-min_temp_start_coords = 370 # This value increments by 30px every loop iteration
-min_temp_station_name_x = 115  # Where Station Name Appears 
-min_temp_value_x = 460  # Where Value Appears 
-
-max_rain_start_coords = 540 # This value increments by 30px every loop iteration
-max_rain_station_name_x = 115  # Where Station Name Appears 
-max_rain_value_x = 460  # Where Value Appears 
-
-max_wind_start_coords = 720 # This value increments by 30px every loop iteration
-max_wind_station_name_x = 115  # Where Station Name Appears 
-max_wind_value_x = 460  # Where Value Appears 
-
-
-# Left Column 
-
-max_hum_start_coords = 190 # This value increments by 30px every loop iteration
-max_hum_station_name_x = 650  # WHere Station Name Appears 
-max_hum_value_x = 950  # Where Value Appears 
-max_hum_unit_x = 970    # Where Unit Appears 
-
-min_hum_start_coords = 370 # This value increments by 30px every loop iteration
-min_hum_station_name_x = 650  # WHere Station Name Appears 
-min_hum_value_x = 950  # Where Value Appears 
-min_hum_unit_x = 970    # Where Unit Appears 
-
-
 #Function to fetch data to fill textfields 
 def getDados(linha, aSubstituir):
     name = getStationNameById(linha.stationId)
@@ -312,12 +268,39 @@ def getDados(linha, aSubstituir):
 
 #Function to create image
 def generate(temp_max, temp_min, rain, wind, humidity_max,humidity_min,amplitude,image, toReplace):
-        global max_temp_start_coords
-        global min_temp_start_coords
-        global max_rain_start_coords
-        global max_wind_start_coords
-        global max_hum_start_coords
-        global min_hum_start_coords
+        # Create vars for coordinates
+
+        # Right Column 
+
+        max_temp_start_coords = 190 # This value increments by 30px every loop iteration
+        max_temp_station_name_x = 115  # Where Station Name Appears 
+        max_temp_value_x = 460  # Where Value Appears 
+
+        min_temp_start_coords = 370 # This value increments by 30px every loop iteration
+        min_temp_station_name_x = 115  # Where Station Name Appears 
+        min_temp_value_x = 460  # Where Value Appears 
+
+        max_rain_start_coords = 540 # This value increments by 30px every loop iteration
+        max_rain_station_name_x = 115  # Where Station Name Appears 
+        max_rain_value_x = 460  # Where Value Appears 
+
+        max_wind_start_coords = 720 # This value increments by 30px every loop iteration
+        max_wind_station_name_x = 115  # Where Station Name Appears 
+        max_wind_value_x = 460  # Where Value Appears 
+
+
+        # Left Column 
+
+        max_hum_start_coords = 190 # This value increments by 30px every loop iteration
+        max_hum_station_name_x = 650  # WHere Station Name Appears 
+        max_hum_value_x = 950  # Where Value Appears 
+        max_hum_unit_x = 970    # Where Unit Appears 
+
+        min_hum_start_coords = 370 # This value increments by 30px every loop iteration
+        min_hum_station_name_x = 650  # WHere Station Name Appears 
+        min_hum_value_x = 950  # Where Value Appears 
+        min_hum_unit_x = 970    # Where Unit Appears 
+
 
 
         for x in range(4):
@@ -407,79 +390,12 @@ generate(four_temp_max_pt,four_temp_min_pt,four_rain_accu_pt,four_wind_max_pt,fo
 #           AÇORES
 # ------------------------------
 
-# Reset Coordinates
-
-# Right Column 
-
-max_temp_start_coords = 190 # This value increments by 30px every loop iteration
-max_temp_station_name_x = 115  # Where Station Name Appears 
-max_temp_value_x = 460  # Where Value Appears 
-
-min_temp_start_coords = 370 # This value increments by 30px every loop iteration
-min_temp_station_name_x = 115  # Where Station Name Appears 
-min_temp_value_x = 460  # Where Value Appears 
-
-max_rain_start_coords = 540 # This value increments by 30px every loop iteration
-max_rain_station_name_x = 115  # Where Station Name Appears 
-max_rain_value_x = 460  # Where Value Appears 
-
-max_wind_start_coords = 720 # This value increments by 30px every loop iteration
-max_wind_station_name_x = 115  # Where Station Name Appears 
-max_wind_value_x = 460  # Where Value Appears 
-
-
-# Left Column 
-
-max_hum_start_coords = 190 # This value increments by 30px every loop iteration
-max_hum_station_name_x = 650  # WHere Station Name Appears 
-max_hum_value_x = 950  # Where Value Appears 
-max_hum_unit_x = 970    # Where Unit Appears 
-
-min_hum_start_coords = 370 # This value increments by 30px every loop iteration
-min_hum_station_name_x = 650  # WHere Station Name Appears 
-min_hum_value_x = 950  # Where Value Appears 
-min_hum_unit_x = 970    # Where Unit Appears 
-
 generate(four_temp_max_az,four_temp_min_az,four_rain_accu_az,four_wind_max_az,four_hum_max_az,four_hum_min_az,df_amplitude_az,image_editable_az,"(DROTRH)")
 
 
 # ------------------------------
 #           MADEIRA
 # ------------------------------
-
-# Reset Coordinates
-
-# Right Column 
-
-max_temp_start_coords = 190 # This value increments by 30px every loop iteration
-max_temp_station_name_x = 115  # Where Station Name Appears 
-max_temp_value_x = 460  # Where Value Appears 
-
-min_temp_start_coords = 370 # This value increments by 30px every loop iteration
-min_temp_station_name_x = 115  # Where Station Name Appears 
-min_temp_value_x = 460  # Where Value Appears 
-
-max_rain_start_coords = 540 # This value increments by 30px every loop iteration
-max_rain_station_name_x = 115  # Where Station Name Appears 
-max_rain_value_x = 460  # Where Value Appears 
-
-max_wind_start_coords = 720 # This value increments by 30px every loop iteration
-max_wind_station_name_x = 115  # Where Station Name Appears 
-max_wind_value_x = 460  # Where Value Appears 
-
-
-# Left Column 
-
-max_hum_start_coords = 190 # This value increments by 30px every loop iteration
-max_hum_station_name_x = 650  # WHere Station Name Appears 
-max_hum_value_x = 950  # Where Value Appears 
-max_hum_unit_x = 970    # Where Unit Appears 
-
-min_hum_start_coords = 370 # This value increments by 30px every loop iteration
-min_hum_station_name_x = 650  # WHere Station Name Appears 
-min_hum_value_x = 950  # Where Value Appears 
-min_hum_unit_x = 970    # Where Unit Appears 
-
 
 generate(four_temp_max_mad,four_temp_min_mad,four_rain_accu_mad,four_wind_max_mad,four_hum_max_mad,four_hum_min_mad,df_amplitude_mad,image_editable_mad,"Madeira,")
 
