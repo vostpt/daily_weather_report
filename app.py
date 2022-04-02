@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # Original Code: Jorge Gomes 
-# Optimization: João Pina 
+# Optimization: João Pina and Nuno Alexandre
 
 # ------------------------------
 #       DESCRIPTION
