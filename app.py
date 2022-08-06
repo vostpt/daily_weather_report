@@ -45,12 +45,14 @@ json_data = json.loads(search.group(1))
 
 ipma_data = pd.concat({k: pd.DataFrame(v).T for k, v in json_data.items()}, axis=0).reset_index()
 
-print (ipma_data.info())
+ipma_data.to_csv("check.csv")
+
+#print (ipma_data.info())
 # Rename resulting level_x columns
 
 ipma_data = ipma_data.rename(columns={'level_0': 'date','level_1':'stationId'})
 
-print (ipma_data.info())
+#print (ipma_data.info())
 
 # Sort dataframe by date 
 
@@ -67,7 +69,7 @@ report_date = str(yesterday_date)
 ipma_data_yesterday = ipma_data[ipma_data['date'] == yesterday_date]
 
 
-print (ipma_data_yesterday.info())
+#print (ipma_data_yesterday.info())
 
 
 # Define function to fetch stationId's name 
@@ -76,10 +78,12 @@ def getStationNameById(id):
     f"?id={id}" 
     # Get response from URL 
     response_id = requests.get(url_bar)
+    #print(response_id)
     # Get the json content from the response
     json_id = response_id.json()
     # Create Datafframe from json file
     df_id = pd.json_normalize(json_id)
+
     return df_id
 
 
@@ -93,9 +97,11 @@ max_records = len(ipma_data_yesterday)
 
 for x in range(max_records):
   info = getStationNameById(ipma_data_yesterday.iloc[x].stationId)
+  #print(info)
   region = info.place.values[0]
-  print(region)
+  #print(region)
   territory.append(region)
+  #print(territory)
 
 # Create new column called "territory" using the list generated above 
 
