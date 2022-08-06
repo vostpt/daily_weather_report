@@ -32,6 +32,7 @@ url = 'https://www.ipma.pt/pt/otempo/obs.superficie/table-top-stations-all.jsp'
 # Get URL content 
 page = requests.get(url)
 
+print(page)
 
 # Based on this soluton 
 # https://gist.github.com/falsovsky/aa5423db4c71ff3dbfeeff48b9102ed5 
