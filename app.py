@@ -30,7 +30,7 @@ from PIL import Image, ImageFont, ImageDraw
 url = 'https://www.ipma.pt/pt/otempo/obs.superficie/table-top-stations-all.jsp'
 
 # Get URL content 
-page = requests.get(url)
+page = requests.get(url, timeout=30)
 
 print(page)
 
