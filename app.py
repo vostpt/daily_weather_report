@@ -27,7 +27,8 @@ from PIL import Image, ImageFont, ImageDraw
 
 # Define URL 
 
-url = 'https://www.ipma.pt/pt/otempo/obs.superficie/table-top-stations-all.jsp'
+#url = 'https://www.ipma.pt/pt/otempo/obs.superficie/table-top-stations-all.jsp'
+url = 'https://bot.fogos.pt/ipma.php'
 
 # Get URL content 
 page = requests.get(url, timeout=30)
