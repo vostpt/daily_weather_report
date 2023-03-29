@@ -4,7 +4,7 @@ name: DAILY WEATHER REPORT ACTION
 on:
   schedule:
     # * is a special character in YAML so you have to quote this string
-    - cron: '0 09 * * *'
+    - cron: '0 08 * * *'
   # Run the workflow manually for debugging or forced executions
   workflow_dispatch:
 
