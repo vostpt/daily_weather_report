@@ -66,6 +66,8 @@ yesterday = datetime.now() - timedelta(1)
 yesterday_date = datetime.strftime(yesterday, '%Y-%m-%d')
 report_date = str(yesterday_date)
 
+print(report_date)
+
 # Create new datafraeme with only yesterday's results
 
 ipma_data_yesterday = ipma_data[ipma_data['date'] == yesterday_date]
