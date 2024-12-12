@@ -34,7 +34,11 @@ logger = logging.getLogger(__name__)
 url = 'https://bot.fogos.pt/ipma.php'
 
 # Get URL content 
+logger.info(f"Fetching data from {url}")
 page = requests.get(url, timeout=30)
+logger.info(f"Initial response status code: {page.status_code}")
+logger.info(f"Initial response headers: {page.headers}")
+logger.debug(f"Initial response content: {page.text[:500]}...")  # Log first 500 chars
 
 print(page)
 
@@ -81,12 +85,22 @@ ipma_data_yesterday = ipma_data[ipma_data['date'] == yesterday_date].copy()
 # Define function to fetch stationId's name 
 def getStationNameById(id):
     try:
+        # Try the v2 endpoint first
         url_bar = f"https://api.fogos.pt/v2/weather/stations?id={id}"
+        logger.info(f"Trying v2 endpoint: {url_bar}")
         response_id = requests.get(url_bar, timeout=30)
+        logger.info(f"V2 response status: {response_id.status_code}")
+        
+        # If v2 fails, try v1 endpoint as fallback
+        if response_id.status_code != 200:
+            url_bar = f"https://api.fogos.pt/v1/weather/stations?id={id}"
+            logger.info(f"Trying v1 endpoint: {url_bar}")
+            response_id = requests.get(url_bar, timeout=30)
+            logger.info(f"V1 response status: {response_id.status_code}")
+        
         response_id.raise_for_status()
         
         # Debug the response
-        logger.debug(f"Response status code: {response_id.status_code}")
         logger.debug(f"Response content: {response_id.text}")
         
         # Check if response is empty
@@ -94,15 +108,25 @@ def getStationNameById(id):
             logger.error(f"Empty response received for station ID {id}")
             return None
         
-        json_id = response_id.json()
-        df_id = pd.json_normalize(json_id)
-        return df_id
+        # Add more detailed error logging
+        try:
+            json_id = response_id.json()
+            if not json_id:
+                logger.error(f"Empty JSON received for station ID {id}")
+                return None
+            
+            # Log the structure of the response
+            logger.debug(f"JSON structure: {json_id.keys() if isinstance(json_id, dict) else 'not a dict'}")
+            
+            df_id = pd.json_normalize(json_id)
+            return df_id
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON decode error for station ID {id}: {e}")
+            logger.error(f"Response content was: {response_id.text[:200]}...")  # Log first 200 chars
+            return None
         
     except requests.exceptions.RequestException as e:
         logger.error(f"Request error for station ID {id}: {e}")
-        return None
-    except json.JSONDecodeError as e:
-        logger.error(f"JSON decode error for station ID {id}: {e}\nResponse content: {response_id.text}")
         return None
     except Exception as e:
         logger.error(f"Unexpected error for station ID {id}: {e}")
@@ -113,6 +137,10 @@ territory = []
 
 # Get max records on dataframe
 max_records = len(ipma_data_yesterday)
+
+# Add logging for dataframe info
+logger.info(f"Processing {max_records} records from {yesterday_date}")
+logger.info(f"Sample station IDs: {ipma_data_yesterday['stationId'].head().tolist()}")
 
 # Get territory for each station on the Dataframe 
 for x in range(max_records):
