@@ -19,7 +19,10 @@ import regex as re
 import json
 from datetime import datetime, timedelta
 from PIL import Image, ImageFont, ImageDraw 
+import logging
 
+# Configure logger
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------
 #    GET DATA AND GENERATE DATAFRAMES
@@ -70,26 +73,40 @@ print(report_date)
 
 # Create new datafraeme with only yesterday's results
 
-ipma_data_yesterday = ipma_data[ipma_data['date'] == yesterday_date]
-
+ipma_data_yesterday = ipma_data[ipma_data['date'] == yesterday_date].copy()
 
 #print (ipma_data_yesterday.info())
 
 
 # Define function to fetch stationId's name 
 def getStationNameById(id):
-    url_bar = f"https://api.fogos.pt/v2/weather/stations" \
-    f"?id={id}" 
-    # Get response from URL 
-    response_id = requests.get(url_bar)
-    #print(response_id)
-    # Get the json content from the response
-    json_id = response_id.json()
-    # Create Datafframe from json file
-    df_id = pd.json_normalize(json_id)
-
-    return df_id
-
+    try:
+        url_bar = f"https://api.fogos.pt/v2/weather/stations?id={id}"
+        response_id = requests.get(url_bar, timeout=30)
+        response_id.raise_for_status()
+        
+        # Debug the response
+        logger.debug(f"Response status code: {response_id.status_code}")
+        logger.debug(f"Response content: {response_id.text}")
+        
+        # Check if response is empty
+        if not response_id.text:
+            logger.error(f"Empty response received for station ID {id}")
+            return None
+        
+        json_id = response_id.json()
+        df_id = pd.json_normalize(json_id)
+        return df_id
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request error for station ID {id}: {e}")
+        return None
+    except json.JSONDecodeError as e:
+        logger.error(f"JSON decode error for station ID {id}: {e}\nResponse content: {response_id.text}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error for station ID {id}: {e}")
+        return None
 
 # Create empty list for territory
 territory = []
@@ -98,18 +115,20 @@ territory = []
 max_records = len(ipma_data_yesterday)
 
 # Get territory for each station on the Dataframe 
-
 for x in range(max_records):
-  info = getStationNameById(ipma_data_yesterday.iloc[x].stationId)
-  #print(info)
-  region = info.place.values[0]
-  #print(region)
-  territory.append(region)
-  #print(territory)
+    info = getStationNameById(ipma_data_yesterday.iloc[x].stationId)
+    if info is None:
+        logger.warning(f"Could not get info for station {ipma_data_yesterday.iloc[x].stationId}, skipping...")
+        territory.append("Unknown")  # Add placeholder instead of skipping
+    else:
+        region = info.place.values[0]
+        territory.append(region)
 
 # Create new column called "territory" using the list generated above 
+ipma_data_yesterday['territory'] = territory
 
-ipma_data_yesterday.loc[:,'territory'] = pd.Series(territory).values
+# Filter out unknown territories before creating specific dataframes
+ipma_data_yesterday = ipma_data_yesterday[ipma_data_yesterday.territory != "Unknown"]
 
 # Create dataframe for Madeira's values from yesterday 
 df_madeira_yesterday = ipma_data_yesterday[ipma_data_yesterday.territory == "Madeira"]
@@ -729,7 +748,3 @@ template_mad.save("daily_meteo_report_mad.png")
 
 
 # Made with 🤍 by Jorge Gomes & João Pina  MARCH 2022
-
-
-
-
