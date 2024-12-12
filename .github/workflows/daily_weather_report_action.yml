@@ -1,42 +1,58 @@
 name: DAILY WEATHER REPORT ACTION
 
-# Controls when the workflow will run / Helpful website: https://crontab.guru/
 on:
   schedule:
-    # * is a special character in YAML so you have to quote this string
     - cron: '0 08 * * *'
-  # Run the workflow manually for debugging or forced executions
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: checkout repo content
+      - name: Checkout repo content
         uses: actions/checkout@v3
         with:
           ref: ${{ github.head_ref }}
 
-      - uses: actions/setup-python@v2
+      - name: Setup Python
+        uses: actions/setup-python@v4  # Updated to v4
         with:
-          python-version: '3.x' # Version range or exact version of a Python version to use, using SemVer's version range syntax
+          python-version: '3.12'  # Specify exact version
+          cache: 'pip'  # Enable pip caching
 
-      # Runs a single command using the runners shell
       - name: Install python packages
         run: |
           python -m pip install --upgrade pip
+          python -m pip install requests pandas pillow regex
           python -m pip install -r requirements.txt
 
-      - name: Run App 
-        run: python app.py
+      - name: Test API endpoints
+        run: |
+          curl -v https://bot.fogos.pt/ipma.php
+          curl -v https://api.fogos.pt/v2/weather/stations?id=1200843
+          curl -v https://api.fogos.pt/v1/weather/stations?id=1200843
 
-      # Commit New Data 
+      - name: Run App with debug logging
+        env:
+          PYTHONUNBUFFERED: 1
+          LOG_LEVEL: DEBUG
+        run: |
+          python -c "
+          import logging
+          logging.basicConfig(level=logging.DEBUG)
+          import requests
+          r = requests.get('https://bot.fogos.pt/ipma.php')
+          print(f'Status: {r.status_code}')
+          print(f'Headers: {r.headers}')
+          print(f'Content: {r.text[:500]}')"
+          python app.py
+
+      - name: Check generated files
+        run: |
+          ls -la *.png
+          file *.png
+
       - name: Commit changes
         uses: stefanzweifel/git-auto-commit-action@v4.1.1
         with:
