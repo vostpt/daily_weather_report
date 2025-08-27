@@ -84,18 +84,22 @@ ipma_data_yesterday = ipma_data[ipma_data['date'] == yesterday_date].copy()
 
 # Define function to fetch stationId's name 
 def getStationNameById(id):
+    headers = {
+        "User-Agent": "VostPTExtremosMeteo/1.0",
+    }
+    
     try:
         # Try the v2 endpoint first
         url_bar = f"https://api.fogos.pt/v2/weather/stations?id={id}"
         logger.info(f"Trying v2 endpoint: {url_bar}")
-        response_id = requests.get(url_bar, timeout=30)
+        response_id = requests.get(url_bar, headers=headers, timeout=30)
         logger.info(f"V2 response status: {response_id.status_code}")
         
         # If v2 fails, try v1 endpoint as fallback
         if response_id.status_code != 200:
             url_bar = f"https://api.fogos.pt/v1/weather/stations?id={id}"
             logger.info(f"Trying v1 endpoint: {url_bar}")
-            response_id = requests.get(url_bar, timeout=30)
+            response_id = requests.get(url_bar, headers=headers, timeout=30)
             logger.info(f"V1 response status: {response_id.status_code}")
         
         response_id.raise_for_status()
