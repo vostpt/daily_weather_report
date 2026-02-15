@@ -108,11 +108,21 @@ def fetch_from_ipma_api(yesterday_date):
 
 def fetch_observations_data(yesterday_date):
     """
-    Fetch IPMA observations. Tries bot.fogos.pt first; on 429 or parse failure
-    falls back to official IPMA API (works from GitHub Actions).
+    Fetch IPMA observations. Uses official IPMA API first (works from GitHub Actions);
+    falls back to bot.fogos.pt only if IPMA API fails (e.g. local network issues).
     Returns json_data dict in format {date: {stationId: {...}}}.
     """
-    # Try bot.fogos.pt first (works locally, has daily aggregates)
+    # Use IPMA API first - no Cloudflare, works from GitHub Actions and locally
+    try:
+        data = fetch_from_ipma_api(yesterday_date)
+        if data and yesterday_date in data:
+            logger.info("Using IPMA API data")
+            return data
+        logger.warning("IPMA API returned no data for yesterday, trying bot.fogos.pt")
+    except Exception as e:
+        logger.warning(f"IPMA API failed: {e}. Trying bot.fogos.pt fallback.")
+
+    # Fallback to bot.fogos.pt (may be rate-limited from GitHub Actions)
     try:
         logger.info(f"Fetching from {URL_BOT_FOGOS}")
         page = requests.get(URL_BOT_FOGOS, headers=HEADERS, timeout=30)
@@ -121,16 +131,18 @@ def fetch_observations_data(yesterday_date):
         if "Access denied" in page.text and "Cloudflare" in page.text:
             raise RuntimeError("Cloudflare blocked")
         page.raise_for_status()
-
         search = re.search(r'var observations = (.*?);', page.text, re.DOTALL)
         if search:
             data = json.loads(search.group(1))
             logger.info("Using bot.fogos.pt data")
             return data
     except Exception as e:
-        logger.warning(f"bot.fogos.pt failed: {e}. Falling back to IPMA API.")
+        logger.error(f"bot.fogos.pt also failed: {e}")
+        raise RuntimeError(
+            "Could not fetch weather data. Both IPMA API and bot.fogos.pt failed."
+        ) from e
 
-    return fetch_from_ipma_api(yesterday_date)
+    raise RuntimeError("Could not fetch weather data from any source.")
 
 
 # Check yesterday's date early (needed for IPMA fallback)
