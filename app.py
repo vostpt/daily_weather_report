@@ -47,7 +47,11 @@ print(page)
 
 # Use Regex to extract json
 
-search = re.search('var observations = (.*?);',page.text,re.DOTALL);
+search = re.search('var observations = (.*?);', page.text, re.DOTALL)
+if not search:
+    logger.error("Could not find 'var observations' pattern in page content.")
+    print("Error: 'var observations' pattern not found.")
+    exit(1)
 json_data = json.loads(search.group(1))
 
 # Create Dataframe from json data
