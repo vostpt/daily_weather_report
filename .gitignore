@@ -1,3 +1,7 @@
+# Virtual environment
+venv/
+.venv/
+env/
 
 ._resumo_meteo_template.png
 ._daily_meteo_report.png

@@ -17,6 +17,7 @@ import requests
 import pandas as pd
 import regex as re
 import json
+import time
 from datetime import datetime, timedelta
 from PIL import Image, ImageFont, ImageDraw 
 import logging
@@ -33,13 +34,66 @@ logger = logging.getLogger(__name__)
 #url = 'https://www.ipma.pt/pt/otempo/obs.superficie/table-top-stations-all.jsp'
 url = 'https://bot.fogos.pt/ipma.php'
 
-# Get URL content 
-logger.info(f"Fetching data from {url}")
-page = requests.get(url, timeout=30)
-logger.info(f"Initial response status code: {page.status_code}")
-logger.info(f"Initial response headers: {page.headers}")
-logger.debug(f"Initial response content: {page.text[:500]}...")  # Log first 500 chars
+# Headers to reduce Cloudflare bot blocking (same as getStationNameById)
+HEADERS = {
+    "User-Agent": "VostPTExtremosMeteo/1.0 (DailyWeatherReport; +https://github.com)",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
 
+def fetch_ipma_data_with_retry(max_retries=3):
+    """Fetch IPMA data with retry logic for 429 (rate limit) responses."""
+    for attempt in range(max_retries):
+        try:
+            logger.info(f"Fetching data from {url} (attempt {attempt + 1}/{max_retries})")
+            page = requests.get(url, headers=HEADERS, timeout=30)
+            logger.info(f"Response status code: {page.status_code}")
+
+            if page.status_code == 429:
+                retry_after = int(page.headers.get("Retry-After", 60))
+                retry_after = min(retry_after, 300)  # Cap at 5 minutes
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        f"Rate limited (429). Retry-After: {retry_after}s. "
+                        f"Waiting before retry {attempt + 2}/{max_retries}..."
+                    )
+                    time.sleep(retry_after)
+                    continue
+                else:
+                    logger.error("Rate limited (429) - max retries exceeded.")
+                    print("Error: Server rate limited (429). Try again later.")
+                    exit(1)
+
+            page.raise_for_status()
+
+            # Check for Cloudflare block page (returns HTML instead of data)
+            if "Access denied" in page.text and "Cloudflare" in page.text:
+                if attempt < max_retries - 1:
+                    wait_time = 60 * (attempt + 1)  # 60s, 120s, 180s
+                    logger.warning(
+                        f"Received Cloudflare block page. Waiting {wait_time}s before retry..."
+                    )
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.error("Cloudflare blocking requests - max retries exceeded.")
+                    print("Error: Access denied by Cloudflare. GitHub Actions may be rate limited.")
+                    exit(1)
+
+            return page
+
+        except requests.exceptions.RequestException as e:
+            if attempt < max_retries - 1:
+                wait_time = 30 * (attempt + 1)
+                logger.warning(f"Request failed: {e}. Retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                raise
+
+    raise RuntimeError("Max retries exceeded")
+
+# Get URL content 
+page = fetch_ipma_data_with_retry()
+logger.debug(f"Response content: {page.text[:500]}...")
 print(page)
 
 # Based on this soluton 
@@ -50,7 +104,9 @@ print(page)
 search = re.search('var observations = (.*?);', page.text, re.DOTALL)
 if not search:
     logger.error("Could not find 'var observations' pattern in page content.")
+    logger.error(f"Response status was: {page.status_code}. First 500 chars: {page.text[:500]}")
     print("Error: 'var observations' pattern not found.")
+    print("Hint: HTTP 429 means rate limited. The server may block automated requests from GitHub Actions.")
     exit(1)
 json_data = json.loads(search.group(1))
 

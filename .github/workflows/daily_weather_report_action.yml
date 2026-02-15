@@ -27,26 +27,13 @@ jobs:
           python -m pip install requests pandas pillow regex
           python -m pip install -r requirements.txt
 
-      - name: Test API endpoints
-        run: |
-          curl -v https://bot.fogos.pt/ipma.php
-          curl -v https://api.fogos.pt/v2/weather/stations?id=1200843
-          curl -v https://api.fogos.pt/v1/weather/stations?id=1200843
-
+      # Avoid hitting bot.fogos.pt before app.py - each request counts toward rate limit.
+      # The app now has its own retry logic and User-Agent for Cloudflare.
       - name: Run App with debug logging
         env:
           PYTHONUNBUFFERED: 1
           LOG_LEVEL: DEBUG
-        run: |
-          python -c "
-          import logging
-          logging.basicConfig(level=logging.DEBUG)
-          import requests
-          r = requests.get('https://bot.fogos.pt/ipma.php')
-          print(f'Status: {r.status_code}')
-          print(f'Headers: {r.headers}')
-          print(f'Content: {r.text[:500]}')"
-          python app.py
+        run: python app.py
 
       - name: Check generated files
         run: |
