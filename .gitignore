@@ -21,3 +21,4 @@ daily_meteo_report_mad_test.png
 daily_meteo_report_az_test.png
 ._check.csv
 check.csv
+__pycache__/app.cpython-310.pyc

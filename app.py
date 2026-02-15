@@ -32,83 +32,114 @@ logger = logging.getLogger(__name__)
 # Define URL 
 
 #url = 'https://www.ipma.pt/pt/otempo/obs.superficie/table-top-stations-all.jsp'
-url = 'https://bot.fogos.pt/ipma.php'
+URL_BOT_FOGOS = 'https://bot.fogos.pt/ipma.php'
+URL_IPMA_API = 'https://api.ipma.pt/open-data/observation/meteorology/stations/observations.json'
 
-# Headers to reduce Cloudflare bot blocking (same as getStationNameById)
+# Headers to reduce Cloudflare bot blocking
 HEADERS = {
     "User-Agent": "VostPTExtremosMeteo/1.0 (DailyWeatherReport; +https://github.com)",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
-def fetch_ipma_data_with_retry(max_retries=3):
-    """Fetch IPMA data with retry logic for 429 (rate limit) responses."""
-    for attempt in range(max_retries):
-        try:
-            logger.info(f"Fetching data from {url} (attempt {attempt + 1}/{max_retries})")
-            page = requests.get(url, headers=HEADERS, timeout=30)
-            logger.info(f"Response status code: {page.status_code}")
+def _is_valid(value):
+    """Exclude -99.0 (IPMA's invalid/missing indicator)."""
+    return value is not None and value != -99.0
 
-            if page.status_code == 429:
-                retry_after = int(page.headers.get("Retry-After", 60))
-                retry_after = min(retry_after, 300)  # Cap at 5 minutes
-                if attempt < max_retries - 1:
-                    logger.warning(
-                        f"Rate limited (429). Retry-After: {retry_after}s. "
-                        f"Waiting before retry {attempt + 2}/{max_retries}..."
-                    )
-                    time.sleep(retry_after)
-                    continue
-                else:
-                    logger.error("Rate limited (429) - max retries exceeded.")
-                    print("Error: Server rate limited (429). Try again later.")
-                    exit(1)
 
-            page.raise_for_status()
+def fetch_from_ipma_api(yesterday_date):
+    """
+    Fetch from official IPMA API (no Cloudflare) and aggregate hourly → daily.
+    Returns json_data in same format as bot.fogos.pt: {date: {stationId: {temp_max, ...}}}
+    """
+    logger.info(f"Fetching from IPMA API (fallback): {URL_IPMA_API}")
+    r = requests.get(URL_IPMA_API, headers=HEADERS, timeout=60)
+    r.raise_for_status()
+    hourly = r.json()
 
-            # Check for Cloudflare block page (returns HTML instead of data)
-            if "Access denied" in page.text and "Cloudflare" in page.text:
-                if attempt < max_retries - 1:
-                    wait_time = 60 * (attempt + 1)  # 60s, 120s, 180s
-                    logger.warning(
-                        f"Received Cloudflare block page. Waiting {wait_time}s before retry..."
-                    )
-                    time.sleep(wait_time)
-                    continue
-                else:
-                    logger.error("Cloudflare blocking requests - max retries exceeded.")
-                    print("Error: Access denied by Cloudflare. GitHub Actions may be rate limited.")
-                    exit(1)
+    # Aggregate by date (YYYY-MM-DD) and station
+    # IPMA: temperatura, humidade, intensidadeVentoKM, precAcumulada
+    daily_by_date_station = {}  # {(date, stationId): {temps, hums, winds, precs}}
 
-            return page
+    for dt_str, stations in hourly.items():
+        if not isinstance(stations, dict):
+            continue
+        date_part = dt_str[:10]  # "2026-02-14T01:00" -> "2026-02-14"
+        for station_id, obs in stations.items():
+            if obs is None:
+                continue
+            key = (date_part, str(station_id))
+            if key not in daily_by_date_station:
+                daily_by_date_station[key] = {
+                    "temps": [], "hums": [], "winds": [], "precs": []
+                }
+            t = obs.get("temperatura")
+            h = obs.get("humidade")
+            w = obs.get("intensidadeVentoKM")
+            p = obs.get("precAcumulada")
+            if _is_valid(t):
+                daily_by_date_station[key]["temps"].append(t)
+            if _is_valid(h):
+                daily_by_date_station[key]["hums"].append(h)
+            if _is_valid(w):
+                daily_by_date_station[key]["winds"].append(w)
+            if p is not None and p >= 0:  # prec can be 0
+                daily_by_date_station[key]["precs"].append(p)
 
-        except requests.exceptions.RequestException as e:
-            if attempt < max_retries - 1:
-                wait_time = 30 * (attempt + 1)
-                logger.warning(f"Request failed: {e}. Retrying in {wait_time}s...")
-                time.sleep(wait_time)
-            else:
-                raise
+    # Build output in bot.fogos.pt format: {date: {stationId: {temp_max, temp_min, ...}}}
+    json_data = {}
+    for (date_part, station_id), agg in daily_by_date_station.items():
+        if not agg["temps"]:  # need at least temp data
+            continue
+        row = {
+            "temp_max": max(agg["temps"]),
+            "temp_min": min(agg["temps"]),
+            "vento_int_max_inst": max(agg["winds"]) if agg["winds"] else -99.0,
+            "prec_quant": max(agg["precs"]) if agg["precs"] else 0.0,
+            "hum_max": max(agg["hums"]) if agg["hums"] else -99.0,
+            "hum_min": min(agg["hums"]) if agg["hums"] else -99.0,
+        }
+        if date_part not in json_data:
+            json_data[date_part] = {}
+        json_data[date_part][station_id] = row
 
-    raise RuntimeError("Max retries exceeded")
+    logger.info(f"IPMA API: aggregated {len(json_data)} dates, {sum(len(v) for v in json_data.values())} station-days")
+    return json_data
 
-# Get URL content 
-page = fetch_ipma_data_with_retry()
-logger.debug(f"Response content: {page.text[:500]}...")
-print(page)
 
-# Based on this soluton 
-# https://gist.github.com/falsovsky/aa5423db4c71ff3dbfeeff48b9102ed5 
+def fetch_observations_data(yesterday_date):
+    """
+    Fetch IPMA observations. Tries bot.fogos.pt first; on 429 or parse failure
+    falls back to official IPMA API (works from GitHub Actions).
+    Returns json_data dict in format {date: {stationId: {...}}}.
+    """
+    # Try bot.fogos.pt first (works locally, has daily aggregates)
+    try:
+        logger.info(f"Fetching from {URL_BOT_FOGOS}")
+        page = requests.get(URL_BOT_FOGOS, headers=HEADERS, timeout=30)
+        if page.status_code == 429:
+            raise RuntimeError("Rate limited (429)")
+        if "Access denied" in page.text and "Cloudflare" in page.text:
+            raise RuntimeError("Cloudflare blocked")
+        page.raise_for_status()
 
-# Use Regex to extract json
+        search = re.search(r'var observations = (.*?);', page.text, re.DOTALL)
+        if search:
+            data = json.loads(search.group(1))
+            logger.info("Using bot.fogos.pt data")
+            return data
+    except Exception as e:
+        logger.warning(f"bot.fogos.pt failed: {e}. Falling back to IPMA API.")
 
-search = re.search('var observations = (.*?);', page.text, re.DOTALL)
-if not search:
-    logger.error("Could not find 'var observations' pattern in page content.")
-    logger.error(f"Response status was: {page.status_code}. First 500 chars: {page.text[:500]}")
-    print("Error: 'var observations' pattern not found.")
-    print("Hint: HTTP 429 means rate limited. The server may block automated requests from GitHub Actions.")
-    exit(1)
-json_data = json.loads(search.group(1))
+    return fetch_from_ipma_api(yesterday_date)
+
+
+# Check yesterday's date early (needed for IPMA fallback)
+yesterday = datetime.now() - timedelta(1)
+yesterday_date = datetime.strftime(yesterday, '%Y-%m-%d')
+
+# Fetch data (bot.fogos.pt or IPMA API fallback)
+json_data = fetch_observations_data(yesterday_date)
+print(f"Fetched data for {len(json_data)} dates")
 
 # Create Dataframe from json data
 
@@ -127,10 +158,6 @@ ipma_data = ipma_data.rename(columns={'level_0': 'date','level_1':'stationId'})
 
 ipma_data = ipma_data.sort_values(by=['date'])
 
-# Check yesterday's date and create string
-
-yesterday = datetime.now() - timedelta(1)
-yesterday_date = datetime.strftime(yesterday, '%Y-%m-%d')
 report_date = str(yesterday_date)
 
 print(report_date)
