@@ -21,6 +21,7 @@ import time
 from datetime import datetime, timedelta
 from PIL import Image, ImageFont, ImageDraw 
 import logging
+from string import Template
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -466,104 +467,129 @@ min_hum_value_x = 950  # Where Value Appears
 min_hum_unit_x = 970    # Where Unit Appears 
 
 
+# ------------------------------
+#     ALT TEXT
+# ------------------------------
 
+alt_text = Template(" ".join([
+    "Temperatura máxima: $max_temp_station_0 ($max_temp_0), $max_temp_station_1 ($max_temp_1), $max_temp_station_2 ($max_temp_2) e $max_temp_station_3 ($max_temp_3).",
+    "Temperatura mínima: $min_temp_station_0 ($min_temp_0), $min_temp_station_1 ($min_temp_1), $min_temp_station_2 ($min_temp_2) e $min_temp_station_3 ($min_temp_3).",
+    "Precipitação acumulada: $rainfall_station_0 ($rainfall_0), $rainfall_station_1 ($rainfall_1), $rainfall_station_2 ($rainfall_2) e $rainfall_station_3 ($rainfall_3).",
+    "Intensidade do vento: $wind_station_0 ($wind_0), $wind_station_1 ($wind_1), $wind_station_2 ($wind_2) e $wind_station_3 ($wind_3).",
+    "Humidade máxima: $max_humidity_station_0 ($max_humidity_0), $max_humidity_station_1 ($max_humidity_1), $max_humidity_station_2 ($max_humidity_2) e $max_humidity_station_3 ($max_humidity_3).",
+    "Humidade mínima: $min_humidity_station_0 ($min_humidity_0), $min_humidity_station_1 ($min_humidity_1), $min_humidity_station_2 ($min_humidity_2) e $min_humidity_station_3 ($min_humidity_3).",
+    "Maior amplitude térmica: $amplitude_station ($amplitude, variando entre $min_amplitude e $max_amplitude)."
+]))
+alt_text_pt_data = {}
 
 # ------------------------------
 #     PORTUGAL CONTINENTAL
 # ------------------------------
 
 
-# Create Loop For Max Temperature 
+# Create Loop For Max Temperature
 for x in range(4):
     name = getStationNameById(four_temp_max_pt.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
     station_temp = str(four_temp_max_pt.iloc[x].temp_max)
     color = four_temp_max_pt.iloc[x].colors
     image_editable_pt.text((max_temp_station_name_x,max_temp_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((max_temp_value_x, max_temp_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_pt_data[f"max_temp_station_{x}"] = station_name_final
+    alt_text_pt_data[f"max_temp_{x}"] = f"{station_temp}ºC"
+
+    # Increase y coordinates by 30px
     max_temp_start_coords += 30
  
- # Create Loop For Min Temperature 
+# Create Loop For Min Temperature
 for x in range(4):
     name = getStationNameById(four_temp_min_pt.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
     station_temp = str(four_temp_min_pt.iloc[x].temp_min)
     color = four_temp_min_pt.iloc[x].colors
     image_editable_pt.text((min_temp_station_name_x,min_temp_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((min_temp_value_x, min_temp_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
-    min_temp_start_coords += 30  
+    alt_text_pt_data[f"min_temp_station_{x}"] = station_name_final
+    alt_text_pt_data[f"min_temp_{x}"] = f"{station_temp}ºC"
 
-# Create Loop For Max Rainfall 
+    # Increase y coordinates by 30px
+    min_temp_start_coords += 30
+
+# Create Loop For Max Rainfall
 for x in range(4):
     name = getStationNameById(four_rain_accu_pt.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
     station_temp = str(four_rain_accu_pt.iloc[x].prec_quant)
     color = four_rain_accu_pt.iloc[x].colors
     image_editable_pt.text((max_rain_station_name_x,max_rain_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((max_rain_value_x, max_rain_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_pt_data[f"rainfall_station_{x}"] = station_name_final
+    alt_text_pt_data[f"rainfall_{x}"] = f"{station_temp} mm"
+
+    # Increase y coordinates by 30px
     max_rain_start_coords += 30
 
 # Create Loop For Max Wind Gust
 for x in range(4):
     name = getStationNameById(four_wind_max_pt.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
     station_temp = str(four_wind_max_pt.iloc[x].vento_int_max_inst)
     color = four_wind_max_pt.iloc[x].colors
     image_editable_pt.text((max_wind_station_name_x,max_wind_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((max_wind_value_x, max_wind_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_pt_data[f"wind_station_{x}"] = station_name_final
+    alt_text_pt_data[f"wind_{x}"] = f"{station_temp} km/h"
+
+    # Increase y coordinates by 30px
     max_wind_start_coords += 30
 
-# Create Loop for Max Humidity 
+# Create Loop for Max Humidity
 for x in range(4):
     name = getStationNameById(four_hum_max_pt.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
     station_temp = str(four_hum_max_pt.iloc[x].hum_max)
     color = four_hum_max_pt.iloc[x].colors
     image_editable_pt.text((max_hum_station_name_x,max_hum_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((max_hum_value_x, max_hum_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_pt_data[f"max_humidity_station_{x}"] = station_name_final
+    alt_text_pt_data[f"max_humidity_{x}"] = f"{station_temp}%"
+
+    # Increase y coordinates by 30px
     max_hum_start_coords += 30
 
-# Create Loop for Min Humidity 
+# Create Loop for Min Humidity
 for x in range(4):
     name = getStationNameById(four_hum_min_pt.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
     station_temp = str(four_hum_min_pt.iloc[x].hum_min)
     color = four_hum_min_pt.iloc[x].colors
     image_editable_pt.text((min_hum_station_name_x,min_hum_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((min_hum_value_x, min_hum_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_pt_data[f"min_humidity_station_{x}"] = station_name_final
+    alt_text_pt_data[f"min_humidity_{x}"] = f"{station_temp}%"
+
+    # Increase y coordinates by 30px
     min_hum_start_coords += 30
 
-# Create Loop for Ampitude
+# Create Loop for Amplitude
 for x in range(1):
     name = getStationNameById(df_amplitude_pt.iloc[x].stationId)
     station_name = name.location.values[0]
@@ -574,6 +600,11 @@ for x in range(1):
     image_editable_pt.text((920,570), station_temp_max,(154,7,7), font=subtitle_font)
     image_editable_pt.text((683,570), station_temp_min,(93,173,236), font=subtitle_font)
     image_editable_pt.text((755,600), station_temp_amplitude,(250,186,61), font=amplitude_font)
+
+    alt_text_pt_data["amplitude_station"] = station_name
+    alt_text_pt_data["amplitude"] = f"{station_temp_amplitude}ºC"
+    alt_text_pt_data["min_amplitude"] = f"{station_temp_min}ºC"
+    alt_text_pt_data["max_amplitude"] = f"{station_temp_max}ºC"
 
 
 # ------------------------------
@@ -872,6 +903,10 @@ image_editable_mad.text((29,1020), report_date,(255,255,255), font=date_font)
 template_pt.save("daily_meteo_report_pt.png")
 template_az.save("daily_meteo_report_az.png")
 template_mad.save("daily_meteo_report_mad.png")
+
+# Save alt text for each picture
+with open("daily_meteo_report_pt.txt", mode="w", encoding="utf-8") as f:
+    f.write(alt_text.substitute(alt_text_pt_data))
 
 #---------------------------------
 #         THE END
