@@ -472,12 +472,12 @@ min_hum_unit_x = 970    # Where Unit Appears
 # ------------------------------
 
 alt_text = Template(" ".join([
-    "Temperatura máxima: $max_temp_station_0 ($max_temp_0), $max_temp_station_1 ($max_temp_1), $max_temp_station_2 ($max_temp_2) e $max_temp_station_3 ($max_temp_3).",
-    "Temperatura mínima: $min_temp_station_0 ($min_temp_0), $min_temp_station_1 ($min_temp_1), $min_temp_station_2 ($min_temp_2) e $min_temp_station_3 ($min_temp_3).",
-    "Chuva acumulada: $rainfall_station_0 ($rainfall_0), $rainfall_station_1 ($rainfall_1), $rainfall_station_2 ($rainfall_2) e $rainfall_station_3 ($rainfall_3).",
-    "Rajada máxima: $wind_station_0 ($wind_0), $wind_station_1 ($wind_1), $wind_station_2 ($wind_2) e $wind_station_3 ($wind_3).",
-    "Humidade máxima: $max_humidity_station_0 ($max_humidity_0), $max_humidity_station_1 ($max_humidity_1), $max_humidity_station_2 ($max_humidity_2) e $max_humidity_station_3 ($max_humidity_3).",
-    "Humidade mínima: $min_humidity_station_0 ($min_humidity_0), $min_humidity_station_1 ($min_humidity_1), $min_humidity_station_2 ($min_humidity_2) e $min_humidity_station_3 ($min_humidity_3).",
+    "Temperatura máxima: $max_temp_station_0 ($max_temp_0); $max_temp_station_1 ($max_temp_1); $max_temp_station_2 ($max_temp_2); $max_temp_station_3 ($max_temp_3).",
+    "Temperatura mínima: $min_temp_station_0 ($min_temp_0); $min_temp_station_1 ($min_temp_1); $min_temp_station_2 ($min_temp_2); $min_temp_station_3 ($min_temp_3).",
+    "Chuva acumulada: $rainfall_station_0 ($rainfall_0); $rainfall_station_1 ($rainfall_1); $rainfall_station_2 ($rainfall_2); $rainfall_station_3 ($rainfall_3).",
+    "Rajada máxima: $wind_station_0 ($wind_0); $wind_station_1 ($wind_1); $wind_station_2 ($wind_2); $wind_station_3 ($wind_3).",
+    "Humidade máxima: $max_humidity_station_0 ($max_humidity_0); $max_humidity_station_1 ($max_humidity_1); $max_humidity_station_2 ($max_humidity_2); $max_humidity_station_3 ($max_humidity_3).",
+    "Humidade mínima: $min_humidity_station_0 ($min_humidity_0); $min_humidity_station_1 ($min_humidity_1); $min_humidity_station_2 ($min_humidity_2); $min_humidity_station_3 ($min_humidity_3).",
     "Maior amplitude térmica: $amplitude_station ($amplitude, variando entre $min_amplitude e $max_amplitude)."
 ]))
 alt_text_pt_data = {}
@@ -499,11 +499,11 @@ for x in range(4):
     image_editable_pt.text((max_temp_value_x, max_temp_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"max_temp_station_{x}"] = station_name_final
-    alt_text_pt_data[f"max_temp_{x}"] = f"{station_temp}ºC"
+    alt_text_pt_data[f"max_temp_{x}"] = f"{four_temp_max_pt.iloc[x].temp_max:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     max_temp_start_coords += 30
- 
+
 # Create Loop For Min Temperature
 for x in range(4):
     name = getStationNameById(four_temp_min_pt.iloc[x].stationId)
@@ -516,7 +516,7 @@ for x in range(4):
     image_editable_pt.text((min_temp_value_x, min_temp_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"min_temp_station_{x}"] = station_name_final
-    alt_text_pt_data[f"min_temp_{x}"] = station_temp
+    alt_text_pt_data[f"min_temp_{x}"] = f"{four_temp_min_pt.iloc[x].temp_min:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     min_temp_start_coords += 30
@@ -533,7 +533,7 @@ for x in range(4):
     image_editable_pt.text((max_rain_value_x, max_rain_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"rainfall_station_{x}"] = station_name_final
-    alt_text_pt_data[f"rainfall_{x}"] = station_temp
+    alt_text_pt_data[f"rainfall_{x}"] = f"{four_rain_accu_pt.iloc[x].prec_quant:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     max_rain_start_coords += 30
@@ -550,7 +550,7 @@ for x in range(4):
     image_editable_pt.text((max_wind_value_x, max_wind_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"wind_station_{x}"] = station_name_final
-    alt_text_pt_data[f"wind_{x}"] = station_temp
+    alt_text_pt_data[f"wind_{x}"] = f"{four_wind_max_pt.iloc[x].vento_int_max_inst:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     max_wind_start_coords += 30
@@ -567,7 +567,7 @@ for x in range(4):
     image_editable_pt.text((max_hum_value_x, max_hum_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"max_humidity_station_{x}"] = station_name_final
-    alt_text_pt_data[f"max_humidity_{x}"] = station_temp
+    alt_text_pt_data[f"max_humidity_{x}"] = f"{four_hum_max_pt.iloc[x].hum_max:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     max_hum_start_coords += 30
@@ -584,7 +584,7 @@ for x in range(4):
     image_editable_pt.text((min_hum_value_x, min_hum_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"min_humidity_station_{x}"] = station_name_final
-    alt_text_pt_data[f"min_humidity_{x}"] = station_temp
+    alt_text_pt_data[f"min_humidity_{x}"] = f"{four_hum_min_pt.iloc[x].hum_min:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     min_hum_start_coords += 30
@@ -602,9 +602,9 @@ for x in range(1):
     image_editable_pt.text((755,600), station_temp_amplitude,(250,186,61), font=amplitude_font)
 
     alt_text_pt_data["amplitude_station"] = station_name
-    alt_text_pt_data["amplitude"] = station_temp_amplitude
-    alt_text_pt_data["min_amplitude"] = station_temp_min
-    alt_text_pt_data["max_amplitude"] = station_temp_max
+    alt_text_pt_data["amplitude"] = f"{round(df_amplitude_pt.iloc[x].amplitude,2):g}".replace(".", ",")
+    alt_text_pt_data["min_amplitude"] = f"{df_amplitude_pt.iloc[x].temp_min:g}".replace(".", ",")
+    alt_text_pt_data["max_amplitude"] = f"{df_amplitude_pt.iloc[x].temp_max:g}".replace(".", ",")
 
 
 # ------------------------------
