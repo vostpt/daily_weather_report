@@ -6,8 +6,8 @@
 #       DESCRIPTION
 # ------------------------------
 
-# This app scrapes information from IPMA and generates an image
-# The image is to be shared automatically on social media 
+# This app scrapes information from IPMA and generates an image and its corresponding alt text
+# The image is to be shared automatically on social media
 
 # ------------------------------
 #       IMPORT LIBRARIES
@@ -480,7 +480,10 @@ alt_text = Template(" ".join([
     "Humidade mínima: $min_humidity_station_0 ($min_humidity_0); $min_humidity_station_1 ($min_humidity_1); $min_humidity_station_2 ($min_humidity_2); $min_humidity_station_3 ($min_humidity_3).",
     "Maior amplitude térmica: $amplitude_station ($amplitude, variando entre $min_amplitude e $max_amplitude)."
 ]))
-alt_text_pt_data = {}
+
+alt_text_pt_data: dict[str, str] = {}
+alt_text_az_data: dict[str, str] = {}
+alt_text_mad_data: dict[str, str] = {}
 
 # ------------------------------
 #     PORTUGAL CONTINENTAL
@@ -493,13 +496,14 @@ for x in range(4):
     station_name = name.location.values[0]
     # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
-    station_temp = str(four_temp_max_pt.iloc[x].temp_max)
+    station_temp_value = four_temp_max_pt.iloc[x].temp_max
+    station_temp = str(station_temp_value)
     color = four_temp_max_pt.iloc[x].colors
     image_editable_pt.text((max_temp_station_name_x,max_temp_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((max_temp_value_x, max_temp_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"max_temp_station_{x}"] = station_name_final
-    alt_text_pt_data[f"max_temp_{x}"] = f"{four_temp_max_pt.iloc[x].temp_max:g}".replace(".", ",")
+    alt_text_pt_data[f"max_temp_{x}"] = f"{station_temp_value:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     max_temp_start_coords += 30
@@ -510,13 +514,14 @@ for x in range(4):
     station_name = name.location.values[0]
     # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
-    station_temp = str(four_temp_min_pt.iloc[x].temp_min)
+    station_temp_value = four_temp_min_pt.iloc[x].temp_min
+    station_temp = str(station_temp_value)
     color = four_temp_min_pt.iloc[x].colors
     image_editable_pt.text((min_temp_station_name_x,min_temp_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((min_temp_value_x, min_temp_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"min_temp_station_{x}"] = station_name_final
-    alt_text_pt_data[f"min_temp_{x}"] = f"{four_temp_min_pt.iloc[x].temp_min:g}".replace(".", ",")
+    alt_text_pt_data[f"min_temp_{x}"] = f"{station_temp_value:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     min_temp_start_coords += 30
@@ -527,13 +532,14 @@ for x in range(4):
     station_name = name.location.values[0]
     # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
-    station_temp = str(four_rain_accu_pt.iloc[x].prec_quant)
+    station_temp_value = four_rain_accu_pt.iloc[x].prec_quant
+    station_temp = str(station_temp_value)
     color = four_rain_accu_pt.iloc[x].colors
     image_editable_pt.text((max_rain_station_name_x,max_rain_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((max_rain_value_x, max_rain_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"rainfall_station_{x}"] = station_name_final
-    alt_text_pt_data[f"rainfall_{x}"] = f"{four_rain_accu_pt.iloc[x].prec_quant:g}".replace(".", ",")
+    alt_text_pt_data[f"rainfall_{x}"] = f"{station_temp_value:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     max_rain_start_coords += 30
@@ -544,13 +550,14 @@ for x in range(4):
     station_name = name.location.values[0]
     # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
-    station_temp = str(four_wind_max_pt.iloc[x].vento_int_max_inst)
+    station_temp_value = four_wind_max_pt.iloc[x].vento_int_max_inst
+    station_temp = str(station_temp_value)
     color = four_wind_max_pt.iloc[x].colors
     image_editable_pt.text((max_wind_station_name_x,max_wind_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((max_wind_value_x, max_wind_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"wind_station_{x}"] = station_name_final
-    alt_text_pt_data[f"wind_{x}"] = f"{four_wind_max_pt.iloc[x].vento_int_max_inst:g}".replace(".", ",")
+    alt_text_pt_data[f"wind_{x}"] = f"{station_temp_value:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     max_wind_start_coords += 30
@@ -561,13 +568,14 @@ for x in range(4):
     station_name = name.location.values[0]
     # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
-    station_temp = str(four_hum_max_pt.iloc[x].hum_max)
+    station_temp_value = four_hum_max_pt.iloc[x].hum_max
+    station_temp = str(station_temp_value)
     color = four_hum_max_pt.iloc[x].colors
     image_editable_pt.text((max_hum_station_name_x,max_hum_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((max_hum_value_x, max_hum_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"max_humidity_station_{x}"] = station_name_final
-    alt_text_pt_data[f"max_humidity_{x}"] = f"{four_hum_max_pt.iloc[x].hum_max:g}".replace(".", ",")
+    alt_text_pt_data[f"max_humidity_{x}"] = f"{station_temp_value:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     max_hum_start_coords += 30
@@ -578,13 +586,14 @@ for x in range(4):
     station_name = name.location.values[0]
     # Strip station names
     station_name_final = station_name.replace("(CIM)", "").strip()
-    station_temp = str(four_hum_min_pt.iloc[x].hum_min)
+    station_temp_value = four_hum_min_pt.iloc[x].hum_min
+    station_temp = str(station_temp_value)
     color = four_hum_min_pt.iloc[x].colors
     image_editable_pt.text((min_hum_station_name_x,min_hum_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_pt.text((min_hum_value_x, min_hum_start_coords), station_temp, color, font=subtitle_font)
 
     alt_text_pt_data[f"min_humidity_station_{x}"] = station_name_final
-    alt_text_pt_data[f"min_humidity_{x}"] = f"{four_hum_min_pt.iloc[x].hum_min:g}".replace(".", ",")
+    alt_text_pt_data[f"min_humidity_{x}"] = f"{station_temp_value:g}".replace(".", ",")
 
     # Increase y coordinates by 30px
     min_hum_start_coords += 30
@@ -593,18 +602,21 @@ for x in range(4):
 for x in range(1):
     name = getStationNameById(df_amplitude_pt.iloc[x].stationId)
     station_name = name.location.values[0]
-    station_temp_max = str(df_amplitude_pt.iloc[x].temp_max)
-    station_temp_min = str(df_amplitude_pt.iloc[x].temp_min)
-    station_temp_amplitude = str(round(df_amplitude_pt.iloc[x].amplitude,2))
+    station_temp_max_value = df_amplitude_pt.iloc[x].temp_max
+    station_temp_min_value = df_amplitude_pt.iloc[x].temp_min
+    station_temp_amplitude_value = round(df_amplitude_pt.iloc[x].amplitude, 2)
+    station_temp_max = str(station_temp_max_value)
+    station_temp_min = str(station_temp_min_value)
+    station_temp_amplitude = str(station_temp_amplitude_value)
     image_editable_pt.text((842,525), station_name,(0,0,0), font=location_font)
     image_editable_pt.text((920,570), station_temp_max,(154,7,7), font=subtitle_font)
     image_editable_pt.text((683,570), station_temp_min,(93,173,236), font=subtitle_font)
     image_editable_pt.text((755,600), station_temp_amplitude,(250,186,61), font=amplitude_font)
 
     alt_text_pt_data["amplitude_station"] = station_name
-    alt_text_pt_data["amplitude"] = f"{round(df_amplitude_pt.iloc[x].amplitude,2):g}".replace(".", ",")
-    alt_text_pt_data["min_amplitude"] = f"{df_amplitude_pt.iloc[x].temp_min:g}".replace(".", ",")
-    alt_text_pt_data["max_amplitude"] = f"{df_amplitude_pt.iloc[x].temp_max:g}".replace(".", ",")
+    alt_text_pt_data["amplitude"] = f"{station_temp_amplitude_value:g}".replace(".", ",")
+    alt_text_pt_data["min_amplitude"] = f"{station_temp_min_value:g}".replace(".", ",")
+    alt_text_pt_data["max_amplitude"] = f"{station_temp_max_value:g}".replace(".", ",")
 
 
 # ------------------------------
@@ -644,109 +656,133 @@ min_hum_station_name_x = 650  # WHere Station Name Appears
 min_hum_value_x = 950  # Where Value Appears 
 min_hum_unit_x = 970    # Where Unit Appears 
 
-# Create Loop For Max Temperature 
+# Create Loop For Max Temperature
 for x in range(4):
     name = getStationNameById(four_temp_max_az.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(DROTRH)", "").strip()
-    station_temp = str(four_temp_max_az.iloc[x].temp_max)
+    station_temp_value = four_temp_max_az.iloc[x].temp_max
+    station_temp = str(station_temp_value)
     color = four_temp_max_az.iloc[x].colors
     image_editable_az.text((max_temp_station_name_x,max_temp_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_az.text((max_temp_value_x, max_temp_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_az_data[f"max_temp_station_{x}"] = station_name_final
+    alt_text_az_data[f"max_temp_{x}"] = f"{station_temp_value:g}".replace(".", ",")
+
+    # Increase y coordinates by 30px
     max_temp_start_coords += 30
- 
- # Create Loop For Min Temperature 
+
+# Create Loop For Min Temperature
 for x in range(4):
     name = getStationNameById(four_temp_min_az.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(DROTRH)", "").strip()
-    station_temp = str(four_temp_min_az.iloc[x].temp_min)
+    station_temp_value = four_temp_min_az.iloc[x].temp_min
+    station_temp = str(station_temp_value)
     color = four_temp_min_az.iloc[x].colors
     image_editable_az.text((min_temp_station_name_x,min_temp_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_az.text((min_temp_value_x, min_temp_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
-    min_temp_start_coords += 30  
+    alt_text_az_data[f"min_temp_station_{x}"] = station_name_final
+    alt_text_az_data[f"min_temp_{x}"] = f"{station_temp_value:g}".replace(".", ",")
 
-# Create Loop For Max Rainfall 
+    # Increase y coordinates by 30px
+    min_temp_start_coords += 30
+
+# Create Loop For Max Rainfall
 for x in range(4):
     name = getStationNameById(four_rain_accu_az.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(DROTRH)", "").strip()
-    station_temp = str(four_rain_accu_az.iloc[x].prec_quant)
+    station_temp_value = four_rain_accu_az.iloc[x].prec_quant
+    station_temp = str(station_temp_value)
     color = four_rain_accu_az.iloc[x].colors
     image_editable_az.text((max_rain_station_name_x,max_rain_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_az.text((max_rain_value_x, max_rain_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_az_data[f"rainfall_station_{x}"] = station_name_final
+    alt_text_az_data[f"rainfall_{x}"] = f"{station_temp_value:g}".replace(".", ",")
+
+    # Increase y coordinates by 30px
     max_rain_start_coords += 30
 
 # Create Loop For Max Wind Gust
 for x in range(4):
     name = getStationNameById(four_wind_max_az.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(DROTRH)", "").strip()
-    station_temp = str(four_wind_max_az.iloc[x].vento_int_max_inst)
+    station_temp_value = four_wind_max_az.iloc[x].vento_int_max_inst
+    station_temp = str(station_temp_value)
     color = four_wind_max_az.iloc[x].colors
     image_editable_az.text((max_wind_station_name_x,max_wind_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_az.text((max_wind_value_x, max_wind_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_az_data[f"wind_station_{x}"] = station_name_final
+    alt_text_az_data[f"wind_{x}"] = f"{station_temp_value:g}".replace(".", ",")
+
+    # Increase y coordinates by 30px
     max_wind_start_coords += 30
 
-# Create Loop for Max Humidity 
+# Create Loop for Max Humidity
 for x in range(4):
     name = getStationNameById(four_hum_max_az.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(DROTRH)", "").strip()
-    station_temp = str(four_hum_max_az.iloc[x].hum_max)
+    station_temp_value = four_hum_max_az.iloc[x].hum_max
+    station_temp = str(station_temp_value)
     color = four_hum_max_az.iloc[x].colors
     image_editable_az.text((max_hum_station_name_x,max_hum_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_az.text((max_hum_value_x, max_hum_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_az_data[f"max_humidity_station_{x}"] = station_name_final
+    alt_text_az_data[f"max_humidity_{x}"] = f"{station_temp_value:g}".replace(".", ",")
+
+    # Increase y coordinates by 30px
     max_hum_start_coords += 30
 
-# Create Loop for Min Humidity 
+# Create Loop for Min Humidity
 for x in range(4):
     name = getStationNameById(four_hum_min_az.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("(DROTRH)", "").strip()
-    station_temp = str(four_hum_min_az.iloc[x].hum_min)
+    station_temp_value = four_hum_min_az.iloc[x].hum_min
+    station_temp = str(station_temp_value)
     color = four_hum_min_az.iloc[x].colors
     image_editable_az.text((min_hum_station_name_x,min_hum_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_az.text((min_hum_value_x, min_hum_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_az_data[f"min_humidity_station_{x}"] = station_name_final
+    alt_text_az_data[f"min_humidity_{x}"] = f"{station_temp_value:g}".replace(".", ",")
+
+    # Increase y coordinates by 30px
     min_hum_start_coords += 30
 
 # Create Loop for Amplitude
 for x in range(1):
     name = getStationNameById(df_amplitude_az.iloc[x].stationId)
     station_name = name.location.values[0]
-    station_temp_max = str(df_amplitude_az.iloc[x].temp_max)
-    station_temp_min = str(df_amplitude_az.iloc[x].temp_min)
-    station_temp_amplitude = str(round(df_amplitude_az.iloc[x].amplitude,2))
+    station_temp_max_value = df_amplitude_az.iloc[x].temp_max
+    station_temp_min_value = df_amplitude_az.iloc[x].temp_min
+    station_temp_amplitude_value = round(df_amplitude_az.iloc[x].amplitude, 2)
+    station_temp_max = str(station_temp_max_value)
+    station_temp_min = str(station_temp_min_value)
+    station_temp_amplitude = str(station_temp_amplitude_value)
     image_editable_az.text((842,525), station_name,(0,0,0), font=location_font)
     image_editable_az.text((920,570), station_temp_max,(154,7,7), font=subtitle_font)
     image_editable_az.text((683,570), station_temp_min,(93,173,236), font=subtitle_font)
     image_editable_az.text((755,600), station_temp_amplitude,(250,186,61), font=amplitude_font)
 
-
+    alt_text_az_data["amplitude_station"] = station_name
+    alt_text_az_data["amplitude"] = f"{station_temp_amplitude_value:g}".replace(".", ",")
+    alt_text_az_data["min_amplitude"] = f"{station_temp_min_value:g}".replace(".", ",")
+    alt_text_az_data["max_amplitude"] = f"{station_temp_max_value:g}".replace(".", ",")
 
 # ------------------------------
 #           MADEIRA
@@ -785,107 +821,133 @@ min_hum_station_name_x = 650  # WHere Station Name Appears
 min_hum_value_x = 950  # Where Value Appears 
 min_hum_unit_x = 970    # Where Unit Appears 
 
-# Create Loop For Max Temperature 
+# Create Loop For Max Temperature
 for x in range(4):
     name = getStationNameById(four_temp_max_mad.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("Madeira,", "").strip()
-    station_temp = str(four_temp_max_mad.iloc[x].temp_max)
+    station_temp_value = four_temp_max_mad.iloc[x].temp_max
+    station_temp = str(station_temp_value)
     color = four_temp_max_mad.iloc[x].colors
     image_editable_mad.text((max_temp_station_name_x,max_temp_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_mad.text((max_temp_value_x, max_temp_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_mad_data[f"max_temp_station_{x}"] = station_name_final
+    alt_text_mad_data[f"max_temp_{x}"] = f"{station_temp_value:g}".replace(".", ",")
+
+    # Increase y coordinates by 30px
     max_temp_start_coords += 30
- 
- # Create Loop For Min Temperature 
+
+# Create Loop For Min Temperature
 for x in range(4):
     name = getStationNameById(four_temp_min_mad.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("Madeira,", "").strip()
-    station_temp = str(four_temp_min_mad.iloc[x].temp_min)
+    station_temp_value = four_temp_min_mad.iloc[x].temp_min
+    station_temp = str(station_temp_value)
     color = four_temp_min_mad.iloc[x].colors
     image_editable_mad.text((min_temp_station_name_x,min_temp_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_mad.text((min_temp_value_x, min_temp_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
-    min_temp_start_coords += 30  
+    alt_text_mad_data[f"min_temp_station_{x}"] = station_name_final
+    alt_text_mad_data[f"min_temp_{x}"] = f"{station_temp_value:g}".replace(".", ",")
 
-# Create Loop For Max Rainfall 
+    # Increase y coordinates by 30px
+    min_temp_start_coords += 30
+
+# Create Loop For Max Rainfall
 for x in range(4):
     name = getStationNameById(four_rain_accu_mad.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("Madeira,", "").strip()
-    station_temp = str(four_rain_accu_mad.iloc[x].prec_quant)
+    station_temp_value = four_rain_accu_mad.iloc[x].prec_quant
+    station_temp = str(station_temp_value)
     color = four_rain_accu_mad.iloc[x].colors
     image_editable_mad.text((max_rain_station_name_x,max_rain_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_mad.text((max_rain_value_x, max_rain_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_mad_data[f"rainfall_station_{x}"] = station_name_final
+    alt_text_mad_data[f"rainfall_{x}"] = f"{station_temp_value:g}".replace(".", ",")
+
+    # Increase y coordinates by 30px
     max_rain_start_coords += 30
 
 # Create Loop For Max Wind Gust
 for x in range(4):
     name = getStationNameById(four_wind_max_mad.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("Madeira,", "").strip()
-    station_temp = str(four_wind_max_mad.iloc[x].vento_int_max_inst)
+    station_temp_value = four_wind_max_mad.iloc[x].vento_int_max_inst
+    station_temp = str(station_temp_value)
     color = four_wind_max_mad.iloc[x].colors
     image_editable_mad.text((max_wind_station_name_x,max_wind_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_mad.text((max_wind_value_x, max_wind_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_mad_data[f"wind_station_{x}"] = station_name_final
+    alt_text_mad_data[f"wind_{x}"] = f"{station_temp_value:g}".replace(".", ",")
+
+    # Increase y coordinates by 30px
     max_wind_start_coords += 30
 
-# Create Loop for Max Humidity 
+# Create Loop for Max Humidity
 for x in range(4):
     name = getStationNameById(four_hum_max_mad.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("Madeira,", "").strip()
-    station_temp = str(four_hum_max_mad.iloc[x].hum_max)
+    station_temp_value = four_hum_max_mad.iloc[x].hum_max
+    station_temp = str(station_temp_value)
     color = four_hum_max_mad.iloc[x].colors
     image_editable_mad.text((max_hum_station_name_x,max_hum_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_mad.text((max_hum_value_x, max_hum_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_mad_data[f"max_humidity_station_{x}"] = station_name_final
+    alt_text_mad_data[f"max_humidity_{x}"] = f"{station_temp_value:g}".replace(".", ",")
+
+    # Increase y coordinates by 30px
     max_hum_start_coords += 30
 
-# Create Loop for Min Humidity 
+# Create Loop for Min Humidity
 for x in range(4):
     name = getStationNameById(four_hum_min_mad.iloc[x].stationId)
     station_name = name.location.values[0]
-    # Strip station names 
+    # Strip station names
     station_name_final = station_name.replace("Madeira,", "").strip()
-    station_temp = str(four_hum_min_mad.iloc[x].hum_min)
+    station_temp_value = four_hum_min_mad.iloc[x].hum_min
+    station_temp = str(station_temp_value)
     color = four_hum_min_mad.iloc[x].colors
     image_editable_mad.text((min_hum_station_name_x,min_hum_start_coords), station_name_final, color, font=subtitle_font)
     image_editable_mad.text((min_hum_value_x, min_hum_start_coords), station_temp, color, font=subtitle_font)
-    
 
-    # Increase y coordinates by 30px 
+    alt_text_mad_data[f"min_humidity_station_{x}"] = station_name_final
+    alt_text_mad_data[f"min_humidity_{x}"] = f"{station_temp_value:g}".replace(".", ",")
+
+    # Increase y coordinates by 30px
     min_hum_start_coords += 30
 
 # Create Loop for Amplitude
 for x in range(1):
     name = getStationNameById(df_amplitude_mad.iloc[x].stationId)
     station_name = name.location.values[0]
-    station_temp_max = str(df_amplitude_mad.iloc[x].temp_max)
-    station_temp_min = str(df_amplitude_mad.iloc[x].temp_min)
-    station_temp_amplitude = str(round(df_amplitude_mad.iloc[x].amplitude,2))
+    station_temp_max_value = df_amplitude_mad.iloc[x].temp_max
+    station_temp_min_value = df_amplitude_mad.iloc[x].temp_min
+    station_temp_amplitude_value = round(df_amplitude_mad.iloc[x].amplitude, 2)
+    station_temp_max = str(station_temp_max_value)
+    station_temp_min = str(station_temp_min_value)
+    station_temp_amplitude = str(station_temp_amplitude_value)
     image_editable_mad.text((842,525), station_name,(0,0,0), font=location_font)
     image_editable_mad.text((920,570), station_temp_max,(154,7,7), font=subtitle_font)
     image_editable_mad.text((683,570), station_temp_min,(93,173,236), font=subtitle_font)
     image_editable_mad.text((755,600), station_temp_amplitude,(250,186,61), font=amplitude_font)
+
+    alt_text_mad_data["amplitude_station"] = station_name
+    alt_text_mad_data["amplitude"] = f"{station_temp_amplitude_value:g}".replace(".", ",")
+    alt_text_mad_data["min_amplitude"] = f"{station_temp_min_value:g}".replace(".", ",")
+    alt_text_mad_data["max_amplitude"] = f"{station_temp_max_value:g}".replace(".", ",")
 
 #---------------------------------
 #      INSERT DATES
@@ -904,9 +966,15 @@ template_pt.save("daily_meteo_report_pt.png")
 template_az.save("daily_meteo_report_az.png")
 template_mad.save("daily_meteo_report_mad.png")
 
-# Save alt text for each picture
+# Save Alt Texts
 with open("daily_meteo_report_pt.txt", mode="w", encoding="utf-8") as f:
     f.write(alt_text.substitute(alt_text_pt_data))
+
+with open("daily_meteo_report_az.txt", mode="w", encoding="utf-8") as f:
+    f.write(alt_text.substitute(alt_text_az_data))
+
+with open("daily_meteo_report_mad.txt", mode="w", encoding="utf-8") as f:
+    f.write(alt_text.substitute(alt_text_mad_data))
 
 #---------------------------------
 #         THE END
