@@ -15,13 +15,13 @@
 
 import requests
 import pandas as pd
-import regex as re
+import re   
 import json
 import time
 from datetime import datetime, timedelta
-from PIL import Image, ImageFont, ImageDraw 
+from PIL import Image, ImageFont, ImageDraw
 import logging
-
+from string import Template
 # Configure logger
 logger = logging.getLogger(__name__)
 
@@ -40,6 +40,16 @@ HEADERS = {
     "User-Agent": "VostPTExtremosMeteo/1.0 (DailyWeatherReport; +https://github.com)",
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
+
+station_info_cache = {}
+
+
+def _station_fallback_df(station_id):
+    """Return a safe station payload when API lookup fails."""
+    return pd.DataFrame([{
+        "location": f"Estacao {station_id}",
+        "place": "Unknown",
+    }])
 
 def _is_valid(value):
     """Exclude -99.0 (IPMA's invalid/missing indicator)."""
@@ -183,6 +193,9 @@ ipma_data_yesterday = ipma_data[ipma_data['date'] == yesterday_date].copy()
 
 # Define function to fetch stationId's name 
 def getStationNameById(id):
+    if id in station_info_cache:
+        return station_info_cache[id]
+
     headers = {
         "User-Agent": "VostPTExtremosMeteo/1.0",
     }
@@ -209,31 +222,46 @@ def getStationNameById(id):
         # Check if response is empty
         if not response_id.text:
             logger.error(f"Empty response received for station ID {id}")
-            return None
+            fallback = _station_fallback_df(id)
+            station_info_cache[id] = fallback
+            return fallback
         
         # Add more detailed error logging
         try:
             json_id = response_id.json()
             if not json_id:
                 logger.error(f"Empty JSON received for station ID {id}")
-                return None
+                fallback = _station_fallback_df(id)
+                station_info_cache[id] = fallback
+                return fallback
             
             # Log the structure of the response
             logger.debug(f"JSON structure: {json_id.keys() if isinstance(json_id, dict) else 'not a dict'}")
             
             df_id = pd.json_normalize(json_id)
+            if "location" not in df_id.columns:
+                df_id["location"] = f"Estacao {id}"
+            if "place" not in df_id.columns:
+                df_id["place"] = "Unknown"
+            station_info_cache[id] = df_id
             return df_id
         except json.JSONDecodeError as e:
             logger.error(f"JSON decode error for station ID {id}: {e}")
             logger.error(f"Response content was: {response_id.text[:200]}...")  # Log first 200 chars
-            return None
+            fallback = _station_fallback_df(id)
+            station_info_cache[id] = fallback
+            return fallback
         
     except requests.exceptions.RequestException as e:
         logger.error(f"Request error for station ID {id}: {e}")
-        return None
+        fallback = _station_fallback_df(id)
+        station_info_cache[id] = fallback
+        return fallback
     except Exception as e:
         logger.error(f"Unexpected error for station ID {id}: {e}")
-        return None
+        fallback = _station_fallback_df(id)
+        station_info_cache[id] = fallback
+        return fallback
 
 # Create empty list for territory
 territory = []
@@ -754,6 +782,68 @@ min_hum_station_name_x = 650  # WHere Station Name Appears
 min_hum_value_x = 950  # Where Value Appears 
 min_hum_unit_x = 970    # Where Unit Appears 
 
+alt_text_template = Template(" ".join([
+    "Temperatura máxima: $max_temp_station_0 ($max_temp_0); $max_temp_station_1 ($max_temp_1); $max_temp_station_2 ($max_temp_2); $max_temp_station_3 ($max_temp_3).",
+    "Temperatura mínima: $min_temp_station_0 ($min_temp_0); $min_temp_station_1 ($min_temp_1); $min_temp_station_2 ($min_temp_2); $min_temp_station_3 ($min_temp_3).",
+    "Chuva acumulada: $rainfall_station_0 ($rainfall_0); $rainfall_station_1 ($rainfall_1); $rainfall_station_2 ($rainfall_2); $rainfall_station_3 ($rainfall_3).",
+    "Rajada máxima: $wind_station_0 ($wind_0); $wind_station_1 ($wind_1); $wind_station_2 ($wind_2); $wind_station_3 ($wind_3).",
+    "Humidade máxima: $max_humidity_station_0 ($max_humidity_0); $max_humidity_station_1 ($max_humidity_1); $max_humidity_station_2 ($max_humidity_2); $max_humidity_station_3 ($max_humidity_3).",
+    "Humidade mínima: $min_humidity_station_0 ($min_humidity_0); $min_humidity_station_1 ($min_humidity_1); $min_humidity_station_2 ($min_humidity_2); $min_humidity_station_3 ($min_humidity_3).",
+    "Maior amplitude térmica: $amplitude_station ($amplitude, variando entre $min_amplitude e $max_amplitude)."
+]))
+
+alt_text_pt_data: dict[str, str] = {}
+alt_text_az_data: dict[str, str] = {}
+alt_text_mad_data: dict[str, str] = {}
+
+
+def _build_alt_text_payload(
+    temp_max_df,
+    temp_min_df,
+    rain_df,
+    wind_df,
+    hum_max_df,
+    hum_min_df,
+    amplitude_df,
+    cleaner=lambda value: value,
+):
+    payload = {}
+
+    def fill_top4(prefix, df, value_column):
+        for idx in range(4):
+            if idx < len(df):
+                station_id = df.iloc[idx].stationId
+                station_name = getStationNameById(station_id).location.values[0]
+                station_name = cleaner(station_name)
+                value = df.iloc[idx][value_column]
+            else:
+                station_name = "N/A"
+                value = "N/A"
+            payload[f"{prefix}_station_{idx}"] = str(station_name)
+            payload[f"{prefix}_{idx}"] = str(value)
+
+    fill_top4("max_temp", temp_max_df, "temp_max")
+    fill_top4("min_temp", temp_min_df, "temp_min")
+    fill_top4("rainfall", rain_df, "prec_quant")
+    fill_top4("wind", wind_df, "vento_int_max_inst")
+    fill_top4("max_humidity", hum_max_df, "hum_max")
+    fill_top4("min_humidity", hum_min_df, "hum_min")
+
+    if len(amplitude_df) > 0:
+        amp_station_id = amplitude_df.iloc[0].stationId
+        amp_station_name = cleaner(getStationNameById(amp_station_id).location.values[0])
+        payload["amplitude_station"] = str(amp_station_name)
+        payload["amplitude"] = str(round(amplitude_df.iloc[0].amplitude, 2))
+        payload["min_amplitude"] = str(amplitude_df.iloc[0].temp_min)
+        payload["max_amplitude"] = str(amplitude_df.iloc[0].temp_max)
+    else:
+        payload["amplitude_station"] = "N/A"
+        payload["amplitude"] = "N/A"
+        payload["min_amplitude"] = "N/A"
+        payload["max_amplitude"] = "N/A"
+
+    return payload
+
 # Create Loop For Max Temperature 
 for x in range(4):
     name = getStationNameById(four_temp_max_mad.iloc[x].stationId)
@@ -868,6 +958,45 @@ image_editable_mad.text((29,1020), report_date,(255,255,255), font=date_font)
 #---------------------------------
 #         SAVE PICTURES
 #---------------------------------
+# Build and save alt text files
+alt_text_pt_data = _build_alt_text_payload(
+    four_temp_max_pt,
+    four_temp_min_pt,
+    four_rain_accu_pt,
+    four_wind_max_pt,
+    four_hum_max_pt,
+    four_hum_min_pt,
+    df_amplitude_pt,
+    cleaner=lambda value: value.replace("(CIM)", "").strip(),
+)
+alt_text_az_data = _build_alt_text_payload(
+    four_temp_max_az,
+    four_temp_min_az,
+    four_rain_accu_az,
+    four_wind_max_az,
+    four_hum_max_az,
+    four_hum_min_az,
+    df_amplitude_az,
+    cleaner=lambda value: value.replace("(DROTRH)", "").strip(),
+)
+alt_text_mad_data = _build_alt_text_payload(
+    four_temp_max_mad,
+    four_temp_min_mad,
+    four_rain_accu_mad,
+    four_wind_max_mad,
+    four_hum_max_mad,
+    four_hum_min_mad,
+    df_amplitude_mad,
+    cleaner=lambda value: value.replace("Madeira,", "").strip(),
+)
+
+with open("daily_meteo_report_pt_alt.txt", "w", encoding="utf-8") as file_pt:
+    file_pt.write(alt_text_template.substitute(alt_text_pt_data))
+with open("daily_meteo_report_az_alt.txt", "w", encoding="utf-8") as file_az:
+    file_az.write(alt_text_template.substitute(alt_text_az_data))
+with open("daily_meteo_report_mad_alt.txt", "w", encoding="utf-8") as file_mad:
+    file_mad.write(alt_text_template.substitute(alt_text_mad_data))
+
 # Save Resulting Pictures
 template_pt.save("daily_meteo_report_pt.png")
 template_az.save("daily_meteo_report_az.png")
