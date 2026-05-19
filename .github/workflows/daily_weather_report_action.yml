@@ -2,7 +2,12 @@ name: DAILY WEATHER REPORT ACTION
 
 on:
   schedule:
-    - cron: '0 08 * * *'
+    - cron: '0 1 * * *'
+    - cron: '0 2 * * *'
+    - cron: '0 3 * * *'
+    - cron: '0 4 * * *'
+    - cron: '0 5 * * *'
+    - cron: '0 6 * * *'
   workflow_dispatch:
 
 jobs:
@@ -13,7 +18,7 @@ jobs:
       - name: Checkout repo content
         uses: actions/checkout@v3
         with:
-          ref: ${{ github.head_ref }}
+          ref: main
 
       - name: Setup Python
         uses: actions/setup-python@v4  # Updated to v4
@@ -44,4 +49,3 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v4.1.1
         with:
           commit_message: DAILY WEATHER REPORT SCRAPPING SUCCESSFUL 
-          branch: ${{ github.head_ref }}

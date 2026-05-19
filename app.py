@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # Original Code: Jorge Gomes 
 # Optimization: João Pina 
+#               Micael Carvalho
 
 # ------------------------------
 #       DESCRIPTION
@@ -18,9 +19,13 @@ import pandas as pd
 import regex as re
 import json
 import time
-from datetime import datetime, timedelta
-from PIL import Image, ImageFont, ImageDraw 
+import sys
 import logging
+
+from datetime import datetime, timedelta
+from pathlib import Path
+from zoneinfo import ZoneInfo
+from PIL import Image, ImageFont, ImageDraw 
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -55,6 +60,7 @@ def fetch_from_ipma_api(yesterday_date):
     r = requests.get(URL_IPMA_API, headers=HEADERS, timeout=60)
     r.raise_for_status()
     hourly = r.json()
+    hourly_keys = sorted(hourly.keys())
 
     # Aggregate by date (YYYY-MM-DD) and station
     # IPMA: temperatura, humidade, intensidadeVentoKM, precAcumulada
@@ -103,6 +109,9 @@ def fetch_from_ipma_api(yesterday_date):
         json_data[date_part][station_id] = row
 
     logger.info(f"IPMA API: aggregated {len(json_data)} dates, {sum(len(v) for v in json_data.values())} station-days")
+
+    json_data["_hourly_keys"] = hourly_keys
+
     return json_data
 
 
@@ -149,9 +158,49 @@ def fetch_observations_data(yesterday_date):
 yesterday = datetime.now() - timedelta(1)
 yesterday_date = datetime.strftime(yesterday, '%Y-%m-%d')
 
+locks_dir = Path("locks")
+locks_dir.mkdir(exist_ok=True)
+
+# Delete old lock files
+for old_lock in locks_dir.glob("generated_*.lock"):
+    if yesterday_date not in old_lock.name:
+        old_lock.unlink()
+
+# Today's lock file
+lock_file = locks_dir / f"generated_{yesterday_date}.lock"
+
+# Skip if already generated
+if lock_file.exists():
+    print(f"Report for {yesterday_date} already generated. Skipping.")
+    sys.exit(0)
+
 # Fetch data (bot.fogos.pt or IPMA API fallback)
 json_data = fetch_observations_data(yesterday_date)
+
+hourly_keys = json_data.pop("_hourly_keys", [])
+
 print(f"Fetched data for {len(json_data)} dates")
+
+hours_yesterday = sorted([
+    dt for dt in hourly_keys
+    if dt.startswith(yesterday_date)
+])
+
+hour_count = len(hours_yesterday)
+now_lisbon = datetime.now(ZoneInfo("Europe/Lisbon"))
+
+print(f"Hours available for {yesterday_date}: {hours_yesterday}")
+print(f"Hour count: {hour_count}")
+print(f"Current Lisbon time: {now_lisbon:%Y-%m-%d %H:%M:%S}")
+
+if hour_count < 23 and now_lisbon.hour < 5:
+    print(
+        f"Incomplete data ({hour_count} hours) "
+        f"and before 05:00 Lisbon time. Skipping."
+    )
+    sys.exit(0)
+
+print("Proceeding with report generation.")
 
 # Create Dataframe from json data
 
@@ -873,6 +922,7 @@ template_pt.save("daily_meteo_report_pt.png")
 template_az.save("daily_meteo_report_az.png")
 template_mad.save("daily_meteo_report_mad.png")
 
+lock_file.write_text(f"Generated report for {yesterday_date}\n")
 #---------------------------------
 #         THE END
 #---------------------------------
