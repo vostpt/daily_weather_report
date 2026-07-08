@@ -419,42 +419,55 @@ colors_hum_min = [(154,7,7),(234,9,9),(240,157,57),(239,129,129)]
 colors_wind_max = [(89,133,187),(122,160,210),(147,179,224),(189,208,234)]
 colors_rain_max = [(112,121,164),(138,147,189),(163,175,213),(185,194,226)]
 
+# Attach colors, tolerating regions/metrics with fewer than the expected
+# number of valid stations (e.g. after IPMA's -99.0 invalid readings are
+# filtered out), so a sparse day degrades gracefully instead of crashing.
+def add_colors(df, colors):
+    if len(df) < len(colors):
+        logger.warning(
+            "Only %d station(s) available where %d were expected; rendering available data.",
+            len(df), len(colors),
+        )
+    df.loc[:,'colors'] = pd.Series(colors[:len(df)]).values
+    return df
+
+
 # Max Temperature Colors
 
-four_temp_max_mad.loc[:,'colors'] = pd.Series(colors_temp_max).values
-four_temp_max_az.loc[:,'colors'] = pd.Series(colors_temp_max).values
-four_temp_max_pt.loc[:,'colors'] = pd.Series(colors_temp_max).values
+four_temp_max_mad = add_colors(four_temp_max_mad, colors_temp_max)
+four_temp_max_az = add_colors(four_temp_max_az, colors_temp_max)
+four_temp_max_pt = add_colors(four_temp_max_pt, colors_temp_max)
 
 # Min Temperature Colors
 
-four_temp_min_mad.loc[:,'colors'] = pd.Series(colors_temp_min).values
-four_temp_min_az.loc[:,'colors'] = pd.Series(colors_temp_min).values
-four_temp_min_pt.loc[:,'colors'] = pd.Series(colors_temp_min).values
+four_temp_min_mad = add_colors(four_temp_min_mad, colors_temp_min)
+four_temp_min_az = add_colors(four_temp_min_az, colors_temp_min)
+four_temp_min_pt = add_colors(four_temp_min_pt, colors_temp_min)
 
 
 # Max Rainfall 
 
-four_rain_accu_mad.loc[:,'colors'] = pd.Series(colors_rain_max).values
-four_rain_accu_az.loc[:,'colors'] = pd.Series(colors_rain_max).values
-four_rain_accu_pt.loc[:,'colors'] = pd.Series(colors_rain_max).values
+four_rain_accu_mad = add_colors(four_rain_accu_mad, colors_rain_max)
+four_rain_accu_az = add_colors(four_rain_accu_az, colors_rain_max)
+four_rain_accu_pt = add_colors(four_rain_accu_pt, colors_rain_max)
 
 
 # Max Wind Gust 
 
-four_wind_max_mad.loc[:,'colors'] = pd.Series(colors_wind_max).values
-four_wind_max_az.loc[:,'colors'] = pd.Series(colors_wind_max).values
-four_wind_max_pt.loc[:,'colors'] = pd.Series(colors_wind_max).values
+four_wind_max_mad = add_colors(four_wind_max_mad, colors_wind_max)
+four_wind_max_az = add_colors(four_wind_max_az, colors_wind_max)
+four_wind_max_pt = add_colors(four_wind_max_pt, colors_wind_max)
 
 # Mazimum Humidity
 
-four_hum_max_mad.loc[:,'colors'] = pd.Series(colors_hum_max).values
-four_hum_max_az.loc[:,'colors'] = pd.Series(colors_hum_max).values
-four_hum_max_pt.loc[:,'colors'] = pd.Series(colors_hum_max).values
+four_hum_max_mad = add_colors(four_hum_max_mad, colors_hum_max)
+four_hum_max_az = add_colors(four_hum_max_az, colors_hum_max)
+four_hum_max_pt = add_colors(four_hum_max_pt, colors_hum_max)
 
 # Min Humidity
-four_hum_min_mad.loc[:,'colors'] = pd.Series(colors_hum_min).values
-four_hum_min_az.loc[:,'colors'] = pd.Series(colors_hum_min).values
-four_hum_min_pt.loc[:,'colors'] = pd.Series(colors_hum_min).values
+four_hum_min_mad = add_colors(four_hum_min_mad, colors_hum_min)
+four_hum_min_az = add_colors(four_hum_min_az, colors_hum_min)
+four_hum_min_pt = add_colors(four_hum_min_pt, colors_hum_min)
 
 
 # ------------------------------
@@ -523,7 +536,7 @@ min_hum_unit_x = 970    # Where Unit Appears
 
 
 # Create Loop For Max Temperature 
-for x in range(4):
+for x in range(len(four_temp_max_pt)):
     name = getStationNameById(four_temp_max_pt.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -538,7 +551,7 @@ for x in range(4):
     max_temp_start_coords += 30
  
  # Create Loop For Min Temperature 
-for x in range(4):
+for x in range(len(four_temp_min_pt)):
     name = getStationNameById(four_temp_min_pt.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -553,7 +566,7 @@ for x in range(4):
     min_temp_start_coords += 30  
 
 # Create Loop For Max Rainfall 
-for x in range(4):
+for x in range(len(four_rain_accu_pt)):
     name = getStationNameById(four_rain_accu_pt.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -568,7 +581,7 @@ for x in range(4):
     max_rain_start_coords += 30
 
 # Create Loop For Max Wind Gust
-for x in range(4):
+for x in range(len(four_wind_max_pt)):
     name = getStationNameById(four_wind_max_pt.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -583,7 +596,7 @@ for x in range(4):
     max_wind_start_coords += 30
 
 # Create Loop for Max Humidity 
-for x in range(4):
+for x in range(len(four_hum_max_pt)):
     name = getStationNameById(four_hum_max_pt.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -598,7 +611,7 @@ for x in range(4):
     max_hum_start_coords += 30
 
 # Create Loop for Min Humidity 
-for x in range(4):
+for x in range(len(four_hum_min_pt)):
     name = getStationNameById(four_hum_min_pt.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -613,7 +626,7 @@ for x in range(4):
     min_hum_start_coords += 30
 
 # Create Loop for Ampitude
-for x in range(1):
+for x in range(len(df_amplitude_pt)):
     name = getStationNameById(df_amplitude_pt.iloc[x].stationId)
     station_name = name.location.values[0]
     station_temp_max = str(df_amplitude_pt.iloc[x].temp_max)
@@ -663,7 +676,7 @@ min_hum_value_x = 950  # Where Value Appears
 min_hum_unit_x = 970    # Where Unit Appears 
 
 # Create Loop For Max Temperature 
-for x in range(4):
+for x in range(len(four_temp_max_az)):
     name = getStationNameById(four_temp_max_az.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -678,7 +691,7 @@ for x in range(4):
     max_temp_start_coords += 30
  
  # Create Loop For Min Temperature 
-for x in range(4):
+for x in range(len(four_temp_min_az)):
     name = getStationNameById(four_temp_min_az.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -693,7 +706,7 @@ for x in range(4):
     min_temp_start_coords += 30  
 
 # Create Loop For Max Rainfall 
-for x in range(4):
+for x in range(len(four_rain_accu_az)):
     name = getStationNameById(four_rain_accu_az.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -708,7 +721,7 @@ for x in range(4):
     max_rain_start_coords += 30
 
 # Create Loop For Max Wind Gust
-for x in range(4):
+for x in range(len(four_wind_max_az)):
     name = getStationNameById(four_wind_max_az.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -723,7 +736,7 @@ for x in range(4):
     max_wind_start_coords += 30
 
 # Create Loop for Max Humidity 
-for x in range(4):
+for x in range(len(four_hum_max_az)):
     name = getStationNameById(four_hum_max_az.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -738,7 +751,7 @@ for x in range(4):
     max_hum_start_coords += 30
 
 # Create Loop for Min Humidity 
-for x in range(4):
+for x in range(len(four_hum_min_az)):
     name = getStationNameById(four_hum_min_az.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -753,7 +766,7 @@ for x in range(4):
     min_hum_start_coords += 30
 
 # Create Loop for Ampitude
-for x in range(1):
+for x in range(len(df_amplitude_az)):
     name = getStationNameById(df_amplitude_az.iloc[x].stationId)
     station_name = name.location.values[0]
     station_temp_max = str(df_amplitude_az.iloc[x].temp_max)
@@ -804,7 +817,7 @@ min_hum_value_x = 950  # Where Value Appears
 min_hum_unit_x = 970    # Where Unit Appears 
 
 # Create Loop For Max Temperature 
-for x in range(4):
+for x in range(len(four_temp_max_mad)):
     name = getStationNameById(four_temp_max_mad.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -819,7 +832,7 @@ for x in range(4):
     max_temp_start_coords += 30
  
  # Create Loop For Min Temperature 
-for x in range(4):
+for x in range(len(four_temp_min_mad)):
     name = getStationNameById(four_temp_min_mad.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -834,7 +847,7 @@ for x in range(4):
     min_temp_start_coords += 30  
 
 # Create Loop For Max Rainfall 
-for x in range(4):
+for x in range(len(four_rain_accu_mad)):
     name = getStationNameById(four_rain_accu_mad.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -849,7 +862,7 @@ for x in range(4):
     max_rain_start_coords += 30
 
 # Create Loop For Max Wind Gust
-for x in range(4):
+for x in range(len(four_wind_max_mad)):
     name = getStationNameById(four_wind_max_mad.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -864,7 +877,7 @@ for x in range(4):
     max_wind_start_coords += 30
 
 # Create Loop for Max Humidity 
-for x in range(4):
+for x in range(len(four_hum_max_mad)):
     name = getStationNameById(four_hum_max_mad.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -879,7 +892,7 @@ for x in range(4):
     max_hum_start_coords += 30
 
 # Create Loop for Min Humidity 
-for x in range(4):
+for x in range(len(four_hum_min_mad)):
     name = getStationNameById(four_hum_min_mad.iloc[x].stationId)
     station_name = name.location.values[0]
     # Strip station names 
@@ -894,7 +907,7 @@ for x in range(4):
     min_hum_start_coords += 30
 
 # Create Loop for Ampitude
-for x in range(1):
+for x in range(len(df_amplitude_mad)):
     name = getStationNameById(df_amplitude_mad.iloc[x].stationId)
     station_name = name.location.values[0]
     station_temp_max = str(df_amplitude_mad.iloc[x].temp_max)
