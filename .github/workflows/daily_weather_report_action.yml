@@ -1,0 +1,51 @@
+name: DAILY WEATHER REPORT ACTION
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+    - cron: '0 2 * * *'
+    - cron: '0 3 * * *'
+    - cron: '0 4 * * *'
+    - cron: '0 5 * * *'
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo content
+        uses: actions/checkout@v3
+        with:
+          ref: main
+
+      - name: Setup Python
+        uses: actions/setup-python@v4  # Updated to v4
+        with:
+          python-version: '3.12'  # Specify exact version
+          cache: 'pip'  # Enable pip caching
+
+      - name: Install python packages
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install requests pandas pillow regex
+          python -m pip install -r requirements.txt
+
+      # Avoid hitting bot.fogos.pt before app.py - each request counts toward rate limit.
+      # The app now has its own retry logic and User-Agent for Cloudflare.
+      - name: Run App with debug logging
+        env:
+          PYTHONUNBUFFERED: 1
+          LOG_LEVEL: DEBUG
+        run: python app.py
+
+      - name: Check generated files
+        run: |
+          ls -la *.png
+          file *.png
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v4.1.1
+        with:
+          commit_message: DAILY WEATHER REPORT SCRAPPING SUCCESSFUL 

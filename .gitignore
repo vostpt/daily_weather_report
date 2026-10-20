@@ -1,0 +1,24 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+._resumo_meteo_template.png
+._daily_meteo_report.png
+._daily_meteo_report_az.png
+._daily_meteo_report_mad.png
+._daily_meteo_report_pt.png
+._resumo_meteo_template_az.png
+._resumo_meteo_template_mad.png
+._resumo_meteo_template_pt.png
+._app_test.py
+._daily_meteo_report_mad_test.png
+app_test.py
+daily_meteo_report_mad_test.png
+._daily_meteo_report_test.png
+._app.py
+._daily_meteo_report_pt_test.png
+daily_meteo_report_az_test.png
+._check.csv
+check.csv
+__pycache__/app.cpython-310.pyc
