@@ -24,7 +24,6 @@ import logging
 
 from datetime import datetime, timedelta
 from pathlib import Path
-from zoneinfo import ZoneInfo
 from PIL import Image, ImageFont, ImageDraw 
 
 # Configure logger
@@ -36,9 +35,8 @@ logger = logging.getLogger(__name__)
 
 # Define URL 
 
-#url = 'https://www.ipma.pt/pt/otempo/obs.superficie/table-top-stations-all.jsp'
+URL_IPMA_DAILY = 'https://www.ipma.pt/pt/otempo/obs.superficie/table-top-stations-all.jsp'
 URL_BOT_FOGOS = 'https://bot.fogos.pt/ipma.php'
-URL_IPMA_API = 'https://api.ipma.pt/open-data/observation/meteorology/stations/observations.json'
 
 # Headers to reduce Cloudflare bot blocking
 HEADERS = {
@@ -46,112 +44,46 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
-def _is_valid(value):
-    """Exclude -99.0 (IPMA's invalid/missing indicator)."""
-    return value is not None and value != -99.0
 
-
-def fetch_from_ipma_api(yesterday_date):
+def fetch_daily_observations(url):
     """
-    Fetch from official IPMA API (no Cloudflare) and aggregate hourly → daily.
-    Returns json_data in same format as bot.fogos.pt: {date: {stationId: {temp_max, ...}}}
+    Fetch IPMA's official daily station summaries embedded in the page as
+    `var observations = {...};`. Returns {date: {stationId: {temp_max, ...}}}.
     """
-    logger.info(f"Fetching from IPMA API (fallback): {URL_IPMA_API}")
-    r = requests.get(URL_IPMA_API, headers=HEADERS, timeout=60)
-    r.raise_for_status()
-    hourly = r.json()
-    hourly_keys = sorted(hourly.keys())
-
-    # Aggregate by date (YYYY-MM-DD) and station
-    # IPMA: temperatura, humidade, intensidadeVentoKM, precAcumulada
-    daily_by_date_station = {}  # {(date, stationId): {temps, hums, winds, precs}}
-
-    for dt_str, stations in hourly.items():
-        if not isinstance(stations, dict):
-            continue
-        date_part = dt_str[:10]  # "2026-02-14T01:00" -> "2026-02-14"
-        for station_id, obs in stations.items():
-            if obs is None:
-                continue
-            key = (date_part, str(station_id))
-            if key not in daily_by_date_station:
-                daily_by_date_station[key] = {
-                    "temps": [], "hums": [], "winds": [], "precs": []
-                }
-            t = obs.get("temperatura")
-            h = obs.get("humidade")
-            w = obs.get("intensidadeVentoKM")
-            p = obs.get("precAcumulada")
-            if _is_valid(t):
-                daily_by_date_station[key]["temps"].append(t)
-            if _is_valid(h):
-                daily_by_date_station[key]["hums"].append(h)
-            if _is_valid(w):
-                daily_by_date_station[key]["winds"].append(w)
-            if p is not None and p >= 0:  # prec can be 0
-                daily_by_date_station[key]["precs"].append(p)
-
-    # Build output in bot.fogos.pt format: {date: {stationId: {temp_max, temp_min, ...}}}
-    json_data = {}
-    for (date_part, station_id), agg in daily_by_date_station.items():
-        if not agg["temps"]:  # need at least temp data
-            continue
-        row = {
-            "temp_max": max(agg["temps"]),
-            "temp_min": min(agg["temps"]),
-            "vento_int_max_inst": max(agg["winds"]) if agg["winds"] else -99.0,
-            "prec_quant": max(agg["precs"]) if agg["precs"] else 0.0,
-            "hum_max": max(agg["hums"]) if agg["hums"] else -99.0,
-            "hum_min": min(agg["hums"]) if agg["hums"] else -99.0,
-        }
-        if date_part not in json_data:
-            json_data[date_part] = {}
-        json_data[date_part][station_id] = row
-
-    logger.info(f"IPMA API: aggregated {len(json_data)} dates, {sum(len(v) for v in json_data.values())} station-days")
-
-    json_data["_hourly_keys"] = hourly_keys
-
-    return json_data
+    logger.info(f"Fetching from {url}")
+    page = requests.get(url, headers=HEADERS, timeout=60)
+    if page.status_code == 429:
+        raise RuntimeError("Rate limited (429)")
+    if "Access denied" in page.text and "Cloudflare" in page.text:
+        raise RuntimeError("Cloudflare blocked")
+    page.raise_for_status()
+    search = re.search(r'var observations = (.*?);', page.text, re.DOTALL)
+    if not search:
+        raise RuntimeError("Observations not found in page")
+    return json.loads(search.group(1))
 
 
 def fetch_observations_data(yesterday_date):
     """
-    Fetch IPMA observations. Uses official IPMA API first (works from GitHub Actions);
-    falls back to bot.fogos.pt only if IPMA API fails (e.g. local network issues).
-    Returns json_data dict in format {date: {stationId: {...}}}.
+    Fetch IPMA daily observations. Uses the IPMA page directly first and
+    bot.fogos.pt (a proxy of the same page) as fallback.
+
+    The hourly api.ipma.pt endpoint is deliberately not used: it only covers
+    the last 24 hours, so yesterday's extremes computed from it miss the
+    early-morning hours and gusts/precipitation totals are wrong.
     """
-    # Use IPMA API first - no Cloudflare, works from GitHub Actions and locally
-    try:
-        data = fetch_from_ipma_api(yesterday_date)
-        if data and yesterday_date in data:
-            logger.info("Using IPMA API data")
+    for url in (URL_IPMA_DAILY, URL_BOT_FOGOS):
+        try:
+            data = fetch_daily_observations(url)
+        except Exception as e:
+            logger.warning(f"{url} failed: {e}")
+            continue
+        if yesterday_date in data:
+            logger.info(f"Using data from {url}")
             return data
-        logger.warning("IPMA API returned no data for yesterday, trying bot.fogos.pt")
-    except Exception as e:
-        logger.warning(f"IPMA API failed: {e}. Trying bot.fogos.pt fallback.")
+        logger.warning(f"{url} has no data for {yesterday_date} yet")
 
-    # Fallback to bot.fogos.pt (may be rate-limited from GitHub Actions)
-    try:
-        logger.info(f"Fetching from {URL_BOT_FOGOS}")
-        page = requests.get(URL_BOT_FOGOS, headers=HEADERS, timeout=30)
-        if page.status_code == 429:
-            raise RuntimeError("Rate limited (429)")
-        if "Access denied" in page.text and "Cloudflare" in page.text:
-            raise RuntimeError("Cloudflare blocked")
-        page.raise_for_status()
-        search = re.search(r'var observations = (.*?);', page.text, re.DOTALL)
-        if search:
-            data = json.loads(search.group(1))
-            logger.info("Using bot.fogos.pt data")
-            return data
-    except Exception as e:
-        logger.error(f"bot.fogos.pt also failed: {e}")
-        raise RuntimeError(
-            "Could not fetch weather data. Both IPMA API and bot.fogos.pt failed."
-        ) from e
-
-    raise RuntimeError("Could not fetch weather data from any source.")
+    raise RuntimeError(f"Could not fetch daily weather data for {yesterday_date} from any source.")
 
 
 # Check yesterday's date early (needed for IPMA fallback)
@@ -174,33 +106,10 @@ if lock_file.exists():
     print(f"Report for {yesterday_date} already generated. Skipping.")
     sys.exit(0)
 
-# Fetch data (bot.fogos.pt or IPMA API fallback)
+# Fetch data (IPMA page or bot.fogos.pt fallback)
 json_data = fetch_observations_data(yesterday_date)
 
-hourly_keys = json_data.pop("_hourly_keys", [])
-
 print(f"Fetched data for {len(json_data)} dates")
-
-hours_yesterday = sorted([
-    dt for dt in hourly_keys
-    if dt.startswith(yesterday_date)
-])
-
-hour_count = len(hours_yesterday)
-now_lisbon = datetime.now(ZoneInfo("Europe/Lisbon"))
-
-print(f"Hours available for {yesterday_date}: {hours_yesterday}")
-print(f"Hour count: {hour_count}")
-print(f"Current Lisbon time: {now_lisbon:%Y-%m-%d %H:%M:%S}")
-
-if hour_count < 23 and now_lisbon.hour < 5:
-    print(
-        f"Incomplete data ({hour_count} hours) "
-        f"and before 05:00 Lisbon time. Skipping."
-    )
-    sys.exit(0)
-
-print("Proceeding with report generation.")
 
 # Create Dataframe from json data
 
@@ -230,59 +139,38 @@ ipma_data_yesterday = ipma_data[ipma_data['date'] == yesterday_date].copy()
 #print (ipma_data_yesterday.info())
 
 
-# Define function to fetch stationId's name 
-def getStationNameById(id):
-    headers = {
-        "User-Agent": "VostPTExtremosMeteo/1.0",
-    }
-    
-    try:
-        # Try the v2 endpoint first
-        url_bar = f"https://api.fogos.pt/v2/weather/stations?id={id}"
-        logger.info(f"Trying v2 endpoint: {url_bar}")
-        response_id = requests.get(url_bar, headers=headers, timeout=30)
-        logger.info(f"V2 response status: {response_id.status_code}")
-        
-        # If v2 fails, try v1 endpoint as fallback
-        if response_id.status_code != 200:
-            url_bar = f"https://api.fogos.pt/v1/weather/stations?id={id}"
-            logger.info(f"Trying v1 endpoint: {url_bar}")
-            response_id = requests.get(url_bar, headers=headers, timeout=30)
-            logger.info(f"V1 response status: {response_id.status_code}")
-        
-        response_id.raise_for_status()
-        
-        # Debug the response
-        logger.debug(f"Response content: {response_id.text}")
-        
-        # Check if response is empty
-        if not response_id.text:
-            logger.error(f"Empty response received for station ID {id}")
-            return None
-        
-        # Add more detailed error logging
+# Fetch all stations once (one request per station was slow and timeouts
+# silently dropped stations from the report)
+URL_STATIONS = "https://api.fogos.pt/v2/weather/stations"
+
+
+def fetch_stations():
+    for attempt in range(1, 4):
         try:
-            json_id = response_id.json()
-            if not json_id:
-                logger.error(f"Empty JSON received for station ID {id}")
-                return None
-            
-            # Log the structure of the response
-            logger.debug(f"JSON structure: {json_id.keys() if isinstance(json_id, dict) else 'not a dict'}")
-            
-            df_id = pd.json_normalize(json_id)
-            return df_id
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON decode error for station ID {id}: {e}")
-            logger.error(f"Response content was: {response_id.text[:200]}...")  # Log first 200 chars
-            return None
-        
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request error for station ID {id}: {e}")
+            response = requests.get(URL_STATIONS, headers=HEADERS, timeout=60)
+            response.raise_for_status()
+            # Newer stations carry the IPMA id in `stationId` (`id` is the DB id)
+            return {
+                str(st.get("stationId", st.get("id"))): st
+                for st in response.json()
+            }
+        except Exception as e:
+            logger.warning(f"Stations request failed (attempt {attempt}/3): {e}")
+            time.sleep(10 * attempt)
+    raise RuntimeError(f"Could not fetch stations from {URL_STATIONS}")
+
+
+stations = fetch_stations()
+logger.info(f"Loaded {len(stations)} stations")
+
+
+# Define function to fetch stationId's name
+def getStationNameById(id):
+    station = stations.get(str(id))
+    if station is None:
+        logger.error(f"Station ID {id} not found in {URL_STATIONS}")
         return None
-    except Exception as e:
-        logger.error(f"Unexpected error for station ID {id}: {e}")
-        return None
+    return pd.json_normalize(station)
 
 # Create empty list for territory
 territory = []
