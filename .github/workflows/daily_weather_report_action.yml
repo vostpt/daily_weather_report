@@ -10,18 +10,21 @@ on:
     - cron: '0 6 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repo content
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
         with:
           ref: main
 
       - name: Setup Python
-        uses: actions/setup-python@v4  # Updated to v4
+        uses: actions/setup-python@v7
         with:
           python-version: '3.12'  # Specify exact version
           cache: 'pip'  # Enable pip caching
@@ -46,6 +49,6 @@ jobs:
           file *.png
 
       - name: Commit changes
-        uses: stefanzweifel/git-auto-commit-action@v4.1.1
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: DAILY WEATHER REPORT SCRAPPING SUCCESSFUL 
